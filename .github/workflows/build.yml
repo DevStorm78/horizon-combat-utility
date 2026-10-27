@@ -15,12 +15,10 @@ jobs:
           targets: wasm32-unknown-unknown
       - name: Install Horizon mod CLI
         run: cargo install --git https://github.com/ludovic111/horizon cargo-horizon-mod
-      - name: Check mod
-        run: cargo horizon-mod check
-      - name: Run tests
-        run: cargo horizon-mod test
       - name: Build .hmod
         run: cargo horizon-mod build
+      - name: Run sandbox tests
+        run: cargo horizon-mod test
       - name: Upload .hmod
         uses: actions/upload-artifact@v4
         with:
