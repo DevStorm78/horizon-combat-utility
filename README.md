@@ -57,6 +57,14 @@ The expected package is `target/horizon-mod/horizon_combat_utility.hmod`. The bu
 
 Install by copying the generated package into Horizon's mod directory, or use Horizon's **Open Mod Folder** action. The mod declares the experimental `input` capability explicitly in its manifest.
 
-## CI
+## Build verification
 
-GitHub Actions builds the WASM component and runs the mod's sandbox test script on pushes and pull requests. A successful CI run is the authoritative compile check; the source was authored against the upstream SDK but must be verified by CI.
+**Verified on 2026-10-27:** [GitHub Actions run #40506576964](https://github.com/DevStorm78/horizon-combat-utility/actions/runs/40506576964) completed successfully. Both **Build .hmod** and **Run sandbox tests** passed, and the workflow uploaded a `.hmod` artifact.
+
+[Download the CI artifact](https://github.com/DevStorm78/horizon-combat-utility/actions/runs/40506576964) from the run's **Artifacts** section. GitHub Actions artifacts expire; this one is scheduled to expire on 2027-01-25. This is a CI artifact, not yet a permanent GitHub Release asset.
+
+GitHub Actions builds the WASM component and runs the mod's sandbox test script on pushes and pull requests.
+
+## Important limitation
+
+This is a functional minimal HUD and input-timing coach, **not a working automated combat client yet**. The current public Horizon mod API does not expose the entity targeting, attack/movement input injection, or inventory switching needed for the requested automation. The module toggles are preferences/status only for those unsupported actions. A true triggerbot, automatic W-tap, mace swap, auto lunge, shield breaker, and jump reset require changes to Horizon's engine/API before this mod can implement them.
