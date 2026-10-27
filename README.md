@@ -37,6 +37,7 @@ No anti-cheat evasion, stealth, memory patching, or process injection is impleme
 - `/combat profile minimal`
 - `/combat profile practice`
 - `/combat profile custom`
+- `/combat coach on` / `/combat coach off` — observes attack/forward timing and counts detected W-tap sequences; it does not press keys for you.
 - `/combat hud on` / `/combat hud off`
 
 Names accept hyphens or underscores.
