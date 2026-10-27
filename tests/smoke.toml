@@ -3,8 +3,8 @@ expect.commands = ["combat"]
 
 [[step]]
 command = "combat hud off"
-expect.chat = ["HUD disabled"]
+expect.feedback = "HUD disabled"
 
 [[step]]
 command = "combat hud on"
-expect.chat = ["HUD enabled"]
+expect.feedback = "HUD enabled"
