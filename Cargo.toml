@@ -1,0 +1,11 @@
+[package]
+name = "horizon-combat-utility"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+horizon-mod-sdk = { git = "https://github.com/ludovic111/horizon", package = "horizon-mod-sdk" }
