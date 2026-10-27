@@ -1,0 +1,9 @@
+id = "horizon_combat_utility"
+name = "Combat Utility"
+version = "0.1.0"
+description = "Minimal combat HUD and configurable module status. Automated combat actions are unavailable through the current public mod API."
+authors = ["DevStorm78"]
+api = "0.1"
+side = "client"
+capabilities = ["game-read", "chat", "hud", "storage", "input"]
+experimental = ["input"]
