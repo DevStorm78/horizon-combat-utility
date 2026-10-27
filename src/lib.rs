@@ -149,7 +149,8 @@ impl CombatUtility {
 
     fn command_inner(&mut self, args: &str) -> Result<Option<String>, String> {
         let mut words = args.split_whitespace();
-        match words.next().unwrap_or("status").to_ascii_lowercase().as_str() {
+        let sub = words.next().unwrap_or("status").to_ascii_lowercase();
+        match sub.as_str() {
             "help" => Ok(Some(Self::help().into())),
             "status" => Ok(Some(format!(
                 "Combat Utility | profile={} | HUD={} | attack CPS={}, use CPS={}",
@@ -160,10 +161,7 @@ impl CombatUtility {
             "toggle" | "on" | "off" => {
                 let name = words.next().ok_or("Usage: /combat toggle <module>")?;
                 let i = Self::index(name).ok_or_else(|| format!("Unknown module '{name}'. Try /combat modules"))?;
-                let value = match words.clone().next() {
-                    _ if args.trim_start().starts_with("toggle ") => !self.enabled[i],
-                    _ => args.split_whitespace().next().map(|s| s.eq_ignore_ascii_case("on")).unwrap_or(false),
-                };
+                let value = if sub == "toggle" { !self.enabled[i] } else { sub == "on" };
                 self.set_module(i, value);
                 Ok(None)
             }
