@@ -1,0 +1,28 @@
+name: Build Horizon mod
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install Horizon mod CLI
+        run: cargo install --git https://github.com/ludovic111/horizon cargo-horizon-mod
+      - name: Check mod
+        run: cargo horizon-mod check
+      - name: Run tests
+        run: cargo horizon-mod test
+      - name: Build .hmod
+        run: cargo horizon-mod build
+      - name: Upload .hmod
+        uses: actions/upload-artifact@v4
+        with:
+          name: horizon-combat-utility
+          path: target/horizon-mod/*.hmod
