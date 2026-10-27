@@ -42,6 +42,12 @@ struct CombatUtility {
     profile: Profile,
     last_cps: (u32, u32),
     last_held: String,
+    coach_enabled: bool,
+    attack_was_down: bool,
+    forward_was_down: bool,
+    last_attack_tick: Option<u64>,
+    forward_release_tick: Option<u64>,
+    wtap_count: u32,
 }
 
 impl CombatUtility {
@@ -144,7 +150,7 @@ impl CombatUtility {
     }
 
     fn help() -> &'static str {
-        "Commands: /combat status | modules | toggle <module> | on <module> | off <module> | profile <minimal|practice|custom> | hud <on|off>"
+        "Commands: /combat status | modules | toggle <module> | on <module> | off <module> | profile <minimal|practice|custom> | coach <on|off> | hud <on|off>"
     }
 
     fn command_inner(&mut self, args: &str) -> Result<Option<String>, String> {
@@ -153,9 +159,10 @@ impl CombatUtility {
         match sub.as_str() {
             "help" => Ok(Some(Self::help().into())),
             "status" => Ok(Some(format!(
-                "Combat Utility | profile={} | HUD={} | attack CPS={}, use CPS={}",
+                "Combat Utility | profile={} | HUD={} | attack CPS={}, use CPS={} | W-tap coach={} (detected {})",
                 self.profile.name(), if self.hud_enabled { "on" } else { "off" },
-                self.last_cps.0, self.last_cps.1
+                self.last_cps.0, self.last_cps.1,
+                if self.coach_enabled { "on" } else { "off" }, self.wtap_count
             ))),
             "modules" => Ok(Some(self.module_status())),
             "toggle" | "on" | "off" => {
@@ -173,6 +180,15 @@ impl CombatUtility {
                     _ => return Err("Usage: /combat profile <minimal|practice|custom>".into()),
                 }
                 Ok(None)
+            }
+            "coach" => {
+                match words.next().unwrap_or("on").to_ascii_lowercase().as_str() {
+                    "on" => self.coach_enabled = true,
+                    "off" => self.coach_enabled = false,
+                    _ => return Err("Usage: /combat coach <on|off>".into()),
+                }
+                Self::write_bool("coach_enabled", self.coach_enabled);
+                Ok(Some(format!("W-tap input coach {}", if self.coach_enabled { "enabled" } else { "disabled" })))
             }
             "hud" => {
                 match words.next().unwrap_or("on").to_ascii_lowercase().as_str() {
@@ -196,12 +212,45 @@ impl Mod for CombatUtility {
         let profile = if enabled.iter().any(|v| *v) { Profile::Custom } else { Profile::Minimal };
         Ok((Self {
             enabled, hud_enabled, profile, last_cps: (0, 0), last_held: String::new(),
+            coach_enabled: Self::read_bool("coach_enabled", true),
+            attack_was_down: false, forward_was_down: false,
+            last_attack_tick: None, forward_release_tick: None, wtap_count: 0,
         }, Registration::new().command("combat").on_tick()))
     }
 
     fn tick(&mut self, tick: u64) {
         // Drain input events so the API's event queue does not accumulate.
         let _events = input::poll();
+        let attack_down = input::mapping("key.attack").is_some_and(|m| m.down);
+        let forward_down = input::mapping("key.forward").is_some_and(|m| m.down);
+
+        // Observe the player's own W-tap rhythm. Horizon's public mod API
+        // does not allow a mod to synthesize attack or movement inputs.
+        if self.coach_enabled {
+            if attack_down && !self.attack_was_down {
+                self.last_attack_tick = Some(tick);
+                self.forward_release_tick = None;
+            }
+            if let Some(attack_tick) = self.last_attack_tick {
+                let elapsed = tick.saturating_sub(attack_tick);
+                if !forward_down && self.forward_was_down && elapsed <= 4 {
+                    self.forward_release_tick = Some(tick);
+                }
+                if forward_down && !self.forward_was_down {
+                    if let Some(release_tick) = self.forward_release_tick.take() {
+                        if tick > release_tick && tick.saturating_sub(release_tick) <= 5 {
+                            self.wtap_count = self.wtap_count.saturating_add(1);
+                        }
+                    }
+                }
+                if elapsed > 9 {
+                    self.last_attack_tick = None;
+                    self.forward_release_tick = None;
+                }
+            }
+        }
+        self.attack_was_down = attack_down;
+        self.forward_was_down = forward_down;
         if tick % 5 == 0 {
             self.refresh_hud();
         }
