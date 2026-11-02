@@ -1,10 +1,11 @@
 fn official_tbot_key(game: &mut crate::game::Game<'_>, key: &str, pressed: bool) {
     use crate::game::official_tbot as m;
 
-    // Track both press and release. This is deliberately transient state:
-    // it is not part of Settings::stored(), so it cannot survive a restart.
+    use std::sync::atomic::Ordering;
+
+    // Track press and release in memory; never perform filesystem I/O per key event.
     if key == "key.keyboard.right.shift" && pressed {
-        game.native_set_setting(m::ID, "bind_down", "0");
+        m::HOLD_BIND_DOWN.store(false, Ordering::Relaxed);
     }
 
     // Don't let the key used to operate the settings screen activate gameplay.
@@ -12,7 +13,7 @@ fn official_tbot_key(game: &mut crate::game::Game<'_>, key: &str, pressed: bool)
         let bind = game.native_setting(m::ID, "bind")
             .unwrap_or_else(|| "key.keyboard.right.alt".to_owned());
         if key == bind {
-            game.native_set_setting(m::ID, "bind_down", if pressed { "1" } else { "0" });
+            m::HOLD_BIND_DOWN.store(pressed, Ordering::Relaxed);
         }
     }
 
