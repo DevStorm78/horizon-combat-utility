@@ -99,3 +99,13 @@ bindings = [
   { name = "_modifiers", ty = "u32", value = "modifiers" },
   { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
 ]
+
+[[injection]]
+id = "triggerbot_tick"
+hook = "tick"
+hook_version = 1
+kind = "HEAD"
+helper = "tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
