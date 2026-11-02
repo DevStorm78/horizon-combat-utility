@@ -59,7 +59,7 @@ more than compiling the standalone settings crate.
 
 ## Validation
 
-The GitHub Actions workflow runs formatting, Clippy with warnings denied,
+The GitHub Actions workflow runs Clippy with warnings denied,
 unit tests, Horizon integration check, full client build, and package
 validation. A successful workflow artifact is the installable `.hnmod`.
 A local Rust toolchain or a CI run is required to confirm the build; this
