@@ -27,11 +27,11 @@ A package operation creates an `.hnmod`; it does not prove runtime behaviour. Th
 - Settings are persisted through Horizon's native settings storage.
 - The stock settings page is still a temporary button-list UI.
 - The custom Right-Shift menu, slider/dropdown widgets, bind capture/reset, and gameplay integration are not complete.
-- No attack execution is currently wired. The code must not be described as a working combat bot until target selection, timing, attack dispatch, and in-game behaviour have been implemented and tested.
+- A crosshair triggerbot is wired through Horizon’s normal attack path. It requires the module to be enabled and, by default, the configured hold bind to be held. Runtime behaviour still requires in-game validation.
 
 ## Planned settings
 
-- Module bind and reset
+- Module enable/disable and hold-to-activate bind
 - Target mode
 - Range variability and range
 - Sword and axe cooldown windows
@@ -44,7 +44,7 @@ A package operation creates an `.hnmod`; it does not prove runtime behaviour. Th
 - Weapon only
 - Holding-bind-only and hold bind
 
-## Current implementation boundary\n\nThe UI and settings persistence are implemented, but the module does not yet acquire combat targets or issue automated attacks. No anti-cheat bypass, concealment, or packet manipulation is included. The menu source is pinned to the Horizon revision above and still requires the user's launcher build and in-game validation.\n\n## Performance goals
+## Current implementation boundary\n\nThe triggerbot checks Horizon’s current crosshair entity hit and calls the game’s ordinary attack implementation only when the configured cooldown threshold is reached. It does not scan for off-screen targets, bypass server enforcement, conceal automation, or manipulate packets. The menu source is pinned to the Horizon revision above and still requires the user's launcher build and in-game validation.\n\n## Performance goals
 
 - No world/entity scan on render frames.
 - Tick-driven work only, with early exits while disabled or outside an eligible world.

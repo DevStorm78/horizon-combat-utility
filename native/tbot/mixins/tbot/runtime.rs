@@ -1,8 +1,27 @@
 
 pub const ID: &str = "tbot";
 pub const NAME: &str = "T-Bot";
-pub const VERSION: &str = "0.2.0";
+pub const VERSION: &str = "0.3.0";
 pub const DESCRIPTION: &str = "Configurable combat preferences and timing profile";
+
+use std::sync::atomic::AtomicBool;
+/// Transient key state: never written to the settings directory.
+pub static HOLD_BIND_DOWN: AtomicBool = AtomicBool::new(false);
+
+pub fn should_trigger(
+    enabled: bool,
+    hold_only: bool,
+    bind_down: bool,
+    in_world: bool,
+    has_target: bool,
+    attack_strength: f32,
+) -> bool {
+    enabled
+        && (!hold_only || bind_down)
+        && in_world
+        && has_target
+        && attack_strength >= 0.9
+}
 
 /// Center the settings panel inside Horizon's [x, y, width, height] screen rect.
 pub fn screen_panel_origin(rect: [f32; 4], width: f32, height: f32) -> [f32; 2] {
@@ -83,7 +102,7 @@ impl Default for Settings {
             hit_invisible_players: true,
             weapon_only: false,
             holding_bind_only: true,
-            bind: "BUTTON5".into(),
+            bind: "key.keyboard.right.alt".into(),
         }
     }
 }
@@ -145,7 +164,7 @@ impl Settings {
             format!("Players Only: {}", on(self.players_only)),
             format!("Hit Invisible Players: {}", on(self.hit_invisible_players)),
             format!("Weapon Only: {}", on(self.weapon_only)),
-            format!("Holding Bind Only: {}", on(self.holding_bind_only)),
+            format!("Hold to Activate: {}", on(self.holding_bind_only)),
             format!("Hold Bind: {}  [click to capture]", display_bind(&self.bind)),
             "Reset All Settings".into(),
         ]
@@ -246,7 +265,7 @@ fn display_bind(bind: &str) -> String {
         "BUTTON2" => "Mouse 2".into(),
         "BUTTON3" => "Mouse 3".into(),
         "BUTTON4" => "Mouse 4".into(),
-        "BUTTON5" => "Mouse 5".into(),
+        "key.keyboard.right.alt" => "Right Alt".into(),
         value if value.starts_with("key.keyboard.") =>
             value.trim_start_matches("key.keyboard.").replace('.', " ").to_ascii_uppercase(),
         _ => bind.to_owned(),
@@ -256,6 +275,23 @@ fn display_bind(bind: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn trigger_requires_enabled_module_and_respects_hold_release() {
+        assert!(!should_trigger(true, true, false, true, true, 1.0));
+        assert!(should_trigger(true, true, true, true, true, 1.0));
+        assert!(!should_trigger(true, true, false, true, true, 1.0));
+        assert!(should_trigger(true, false, false, true, true, 1.0));
+    }
+
+    #[test]
+    fn trigger_rejects_missing_target_world_or_cooldown() {
+        assert!(!should_trigger(false, false, false, true, true, 1.0));
+        assert!(!should_trigger(true, false, false, false, true, 1.0));
+        assert!(!should_trigger(true, false, false, true, false, 1.0));
+        assert!(!should_trigger(true, false, false, true, true, 0.89));
+        assert!(should_trigger(true, false, false, true, true, 0.9));
+    }
 
     #[test]
     fn screen_panel_origin_includes_the_screen_rect_offset() {
@@ -283,7 +319,7 @@ mod tests {
         assert_eq!(s.miss_chance, 7);
         assert_eq!(s.miss_range, Window { min: 3.0, max: 3.5 });
         assert_eq!(s.sweep_mode, SweepMode::Dynamic);
-        assert_eq!(s.bind, "BUTTON5");
+        assert_eq!(s.bind, "key.keyboard.right.alt");
     }
 
     #[test]
@@ -314,7 +350,7 @@ mod tests {
         assert_eq!(s.range, Settings::default().range);
         assert_eq!(s.reaction_ms, 0);
         assert_eq!(s.miss_chance, 100);
-        assert_eq!(s.bind, "BUTTON5");
+        assert_eq!(s.bind, "key.keyboard.right.alt");
     }
 
     #[test]
@@ -377,7 +413,7 @@ mod tests {
     fn bind_rejects_control_characters_and_oversized_values() {
         let control = Settings::read(|key| (key == "bind").then(|| "KEY\nINJECT".into()));
         let oversized = Settings::read(|key| (key == "bind").then(|| "X".repeat(49)));
-        assert_eq!(control.bind, "BUTTON5");
-        assert_eq!(oversized.bind, "BUTTON5");
+        assert_eq!(control.bind, "key.keyboard.right.alt");
+        assert_eq!(oversized.bind, "key.keyboard.right.alt");
     }
 }

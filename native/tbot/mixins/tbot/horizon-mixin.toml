@@ -1,6 +1,6 @@
 [mod]
 id = "tbot"
-version = "0.2.0"
+version = "0.3.0"
 priority = 100
 
 # The tested commit; all injections use named, versioned native hook points.
@@ -98,4 +98,14 @@ bindings = [
   { name = "repeat", ty = "bool", value = "repeat" },
   { name = "_modifiers", ty = "u32", value = "modifiers" },
   { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
+]
+
+[[injection]]
+id = "triggerbot_tick"
+hook = "tick"
+hook_version = 1
+kind = "HEAD"
+helper = "tick.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
 ]

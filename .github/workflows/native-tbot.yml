@@ -91,7 +91,7 @@ jobs:
       - name: Upload installable bundle
         uses: actions/upload-artifact@v4
         with:
-          name: tbot-0.2.0-hnmod
-          path: ${{ runner.temp }}/horizon-mods/native/target/tbot-0.2.0.hnmod
+          name: tbot-0.3.0-hnmod
+          path: ${{ runner.temp }}/horizon-mods/native/target/tbot-0.3.0.hnmod
           if-no-files-found: error
           retention-days: 30
