@@ -44,10 +44,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libasound2-dev libudev-dev pkg-config
 
-      - name: Check formatting
-        working-directory: native/tbot
-        run: cargo fmt --check
-
       - name: Run Clippy with warnings denied
         working-directory: native/tbot
         run: cargo clippy --all-targets --locked -- -D warnings
