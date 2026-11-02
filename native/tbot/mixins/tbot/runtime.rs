@@ -140,6 +140,7 @@ impl Settings {
             format!("Weapon Only: {}", on(self.weapon_only)),
             format!("Holding Bind Only: {}", on(self.holding_bind_only)),
             format!("Hold Bind: {}", self.bind),
+            "Reset All Settings".into(),
         ]
     }
 
@@ -166,6 +167,13 @@ impl Settings {
             16 => self.hit_invisible_players = !self.hit_invisible_players,
             17 => self.weapon_only = !self.weapon_only,
             18 => self.holding_bind_only = !self.holding_bind_only,
+            19 => self.bind = match self.bind.as_str() {
+                "BUTTON5" => "BUTTON4".into(),
+                "BUTTON4" => "KEY_R".into(),
+                "KEY_R" => "KEY_F".into(),
+                _ => "BUTTON5".into(),
+            },
+            20 => *self = Self::default(),
             _ => {}
         }
     }
