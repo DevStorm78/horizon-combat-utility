@@ -265,7 +265,7 @@ fn display_bind(bind: &str) -> String {
         "BUTTON2" => "Mouse 2".into(),
         "BUTTON3" => "Mouse 3".into(),
         "BUTTON4" => "Mouse 4".into(),
-        "key.keyboard.right.alt" => "Mouse 5".into(),
+        "key.keyboard.right.alt" => "Right Alt".into(),
         value if value.starts_with("key.keyboard.") =>
             value.trim_start_matches("key.keyboard.").replace('.', " ").to_ascii_uppercase(),
         _ => bind.to_owned(),
@@ -275,6 +275,23 @@ fn display_bind(bind: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn trigger_requires_enabled_module_and_respects_hold_release() {
+        assert!(!should_trigger(true, true, false, true, true, 1.0));
+        assert!(should_trigger(true, true, true, true, true, 1.0));
+        assert!(!should_trigger(true, true, false, true, true, 1.0));
+        assert!(should_trigger(true, false, false, true, true, 1.0));
+    }
+
+    #[test]
+    fn trigger_rejects_missing_target_world_or_cooldown() {
+        assert!(!should_trigger(false, false, false, true, true, 1.0));
+        assert!(!should_trigger(true, false, false, false, true, 1.0));
+        assert!(!should_trigger(true, false, false, true, false, 1.0));
+        assert!(!should_trigger(true, false, false, true, true, 0.89));
+        assert!(should_trigger(true, false, false, true, true, 0.9));
+    }
 
     #[test]
     fn screen_panel_origin_includes_the_screen_rect_offset() {
