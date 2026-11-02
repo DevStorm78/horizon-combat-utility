@@ -10,8 +10,7 @@ fn official_tbot_screen_render(
     let row_h = 17.0_f32;
     let rows = m::Settings::read(|key| game.native_setting(m::ID, key)).labels();
     let height = 56.0 + rows.len() as f32 * row_h;
-    let x = ((screen.rect[2] - width) * 0.5).max(4.0);
-    let y = ((screen.rect[3] - height) * 0.5).max(4.0);
+    let [x, y] = m::screen_panel_origin(screen.rect, width, height);
 
     game.native_fill(batch, [x - 1.0, y - 1.0, width + 2.0, height + 2.0], 0xE00A0D13);
     game.native_fill(batch, [x, y, width, 22.0], 0xFF202A3A);

@@ -4,6 +4,14 @@ pub const NAME: &str = "T-Bot";
 pub const VERSION: &str = "0.2.0";
 pub const DESCRIPTION: &str = "Configurable combat preferences and timing profile";
 
+/// Center the settings panel inside Horizon's [x, y, width, height] screen rect.
+pub fn screen_panel_origin(rect: [f32; 4], width: f32, height: f32) -> [f32; 2] {
+    [
+        rect[0] + ((rect[2] - width) * 0.5).max(4.0),
+        rect[1] + ((rect[3] - height) * 0.5).max(4.0),
+    ]
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TargetMode { Anyone, Players, Mobs }
 
@@ -248,6 +256,22 @@ fn display_bind(bind: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn screen_panel_origin_includes_the_screen_rect_offset() {
+        assert_eq!(
+            screen_panel_origin([48.0, 32.0, 640.0, 480.0], 380.0, 413.0),
+            [178.0, 65.5],
+        );
+    }
+
+    #[test]
+    fn screen_panel_origin_keeps_padding_when_panel_is_smaller() {
+        assert_eq!(
+            screen_panel_origin([12.0, 19.0, 300.0, 200.0], 380.0, 413.0),
+            [16.0, 23.0],
+        );
+    }
 
     #[test]
     fn defaults_match_the_reference_panel() {

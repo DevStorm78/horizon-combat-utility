@@ -25,8 +25,7 @@ fn official_tbot_screen_click(
     let settings = m::Settings::read(|key| game.native_setting(m::ID, key));
     let rows = settings.labels();
     let height = 56.0 + rows.len() as f32 * row_h;
-    let x = ((screen.rect[2] - width) * 0.5).max(4.0);
-    let y = ((screen.rect[3] - height) * 0.5).max(4.0);
+    let [x, y] = m::screen_panel_origin(screen.rect, width, height);
     let local_x = screen.mouse[0] - x;
     let local_y = screen.mouse[1] - y - 48.0;
     if local_x < 0.0 || local_x > width || local_y < 0.0 {
