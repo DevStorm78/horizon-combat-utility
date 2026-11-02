@@ -48,14 +48,19 @@ git clone https://github.com/horizon-rust/horizon-mods.git
 cp -R native/tbot horizon-mods/native/tbot
 cd horizon-mods
 python3 native/tools/native.py check tbot
-python3 native/tools/native.py build tbot
 python3 native/tools/native.py package tbot
 ```
 
-The package is written to `native/target/tbot-0.2.0.hnmod`. The official
-tool downloads the pinned Horizon source and builds the client with the
-native bundle applied. The `check` and `build` commands therefore verify
-more than compiling the standalone settings crate.
+The package is written to `native/target/tbot-0.2.0.hnmod`. The `check`
+command downloads the pinned Horizon source, applies the native bundle and
+runs a full Horizon client `cargo check`; `package` then creates the
+installable source bundle.
+
+At the pinned Horizon revision, the upstream `native.py build` command has
+a package-selection mismatch for the `horizon-ctl` binary. The project's
+GitHub Actions workflow applies a small patch only to its temporary copy of
+that build script, compiling `horizon-client` and `horizon-ctl` from their
+respective packages. It does not modify the upstream Horizon tools.
 
 ## Install and run
 
@@ -81,6 +86,10 @@ native-mods instance, not your ordinary instance.
 
 To inspect the CLI options before building, run
 `horizon-launcher native-build --help`.
+
+The extracted folder passed to `native-build` must directly contain
+`horizon-native.json` and the `mixins/` directory. Keep the `mixins/tbot/`
+folder structure intact when extracting the archive.
 
 ## Validation
 
