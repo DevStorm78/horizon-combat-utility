@@ -64,6 +64,44 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 "$RUNNER_TEMP/horizon-mods/native/tools/native.py" check tbot
 
+      - name: Adapt pinned build script to current Horizon binary packages
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("$RUNNER_TEMP") / "horizon-mods/native/tools/native.py"
+          source = path.read_text()
+          old = '''    if action == "build":
+          command += ["--bin", "horizon-ctl", "--profile", "fast"]
+  '''
+          new = '''    if action == "build":
+          command += ["--profile", "fast"]
+  '''
+          if source.count(old) != 1:
+              raise SystemExit("Expected exactly one outdated horizon-ctl build command")
+          source = source.replace(old, new)
+          old_run = '''    subprocess.run(command, cwd=stage_dir, env=env, check=True)
+      return TARGET / "cargo" / "fast"
+  '''
+          new_run = '''    subprocess.run(command, cwd=stage_dir, env=env, check=True)
+      if action == "build":
+          ctl_command = [
+              "cargo", "build", "--locked", "-p", "horizon-client-lib",
+              "--bin", "horizon-ctl", "--profile", "fast",
+          ]
+          if os.environ.get("NATIVE_NO_DEFAULT_FEATURES"):
+              ctl_command.append("--no-default-features")
+          if jobs:
+              ctl_command += ["-j", jobs]
+          subprocess.run(ctl_command, cwd=stage_dir, env=env, check=True)
+      return TARGET / "cargo" / "fast"
+  '''
+          if source.count(old_run) != 1:
+              raise SystemExit("Could not locate native.py cargo build invocation")
+          path.write_text(source.replace(old_run, new_run))
+          print("Patched only the CI workspace copy: horizon-client and horizon-client-lib binaries build separately.")
+          PY
+
       - name: Build the Horizon client with T-Bot
         env:
           GITHUB_TOKEN: ${{ github.token }}
