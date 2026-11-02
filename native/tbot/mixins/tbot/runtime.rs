@@ -6,8 +6,8 @@
 
 pub const ID: &str = "tbot";
 pub const NAME: &str = "T-Bot";
-pub const VERSION: &str = "0.1.0";
-pub const DESCRIPTION: &str = "Configurable combat timing module";
+pub const VERSION: &str = "0.2.0";
+pub const DESCRIPTION: &str = "Configurable combat preferences and timing profile";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TargetMode { Anyone, Players, Mobs }
