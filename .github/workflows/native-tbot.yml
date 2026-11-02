@@ -64,26 +64,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 "$RUNNER_TEMP/horizon-mods/native/tools/native.py" check tbot
 
-      - name: Work around horizon-ctl package selection in pinned tooling
-        run: |
-          python3 - "$RUNNER_TEMP/horizon-mods/native/tools/native.py" <<'PY'
-          import pathlib
-          import sys
-
-          path = pathlib.Path(sys.argv[1])
-          source = path.read_text()
-          old = 'command += ["--bin", "horizon-ctl", "--profile", "fast"]'
-          new = 'command += ["-p", "horizon-client-lib", "--bin", "horizon-ctl", "--profile", "fast"]'
-          if old not in source:
-              raise SystemExit("Pinned native.py changed; expected cargo command was not found")
-          path.write_text(source.replace(old, new, 1))
-          PY
-
-      - name: Build the Horizon client with T-Bot
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: python3 "$RUNNER_TEMP/horizon-mods/native/tools/native.py" build tbot
-
       - name: Package the installable .hnmod
         run: python3 "$RUNNER_TEMP/horizon-mods/native/tools/native.py" package tbot
 
