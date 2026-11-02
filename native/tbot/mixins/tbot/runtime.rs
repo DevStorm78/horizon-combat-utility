@@ -1,7 +1,7 @@
 
 pub const ID: &str = "tbot";
 pub const NAME: &str = "T-Bot";
-pub const VERSION: &str = "0.2.0";
+pub const VERSION: &str = "0.3.0";
 pub const DESCRIPTION: &str = "Configurable combat preferences and timing profile";
 
 /// Center the settings panel inside Horizon's [x, y, width, height] screen rect.
@@ -246,7 +246,7 @@ fn display_bind(bind: &str) -> String {
         "BUTTON2" => "Mouse 2".into(),
         "BUTTON3" => "Mouse 3".into(),
         "BUTTON4" => "Mouse 4".into(),
-        "BUTTON5" => "Mouse 5".into(),
+        "key.keyboard.right.alt" => "Mouse 5".into(),
         value if value.starts_with("key.keyboard.") =>
             value.trim_start_matches("key.keyboard.").replace('.', " ").to_ascii_uppercase(),
         _ => bind.to_owned(),
@@ -283,7 +283,7 @@ mod tests {
         assert_eq!(s.miss_chance, 7);
         assert_eq!(s.miss_range, Window { min: 3.0, max: 3.5 });
         assert_eq!(s.sweep_mode, SweepMode::Dynamic);
-        assert_eq!(s.bind, "BUTTON5");
+        assert_eq!(s.bind, "key.keyboard.right.alt");
     }
 
     #[test]
@@ -314,7 +314,7 @@ mod tests {
         assert_eq!(s.range, Settings::default().range);
         assert_eq!(s.reaction_ms, 0);
         assert_eq!(s.miss_chance, 100);
-        assert_eq!(s.bind, "BUTTON5");
+        assert_eq!(s.bind, "key.keyboard.right.alt");
     }
 
     #[test]
@@ -377,7 +377,7 @@ mod tests {
     fn bind_rejects_control_characters_and_oversized_values() {
         let control = Settings::read(|key| (key == "bind").then(|| "KEY\nINJECT".into()));
         let oversized = Settings::read(|key| (key == "bind").then(|| "X".repeat(49)));
-        assert_eq!(control.bind, "BUTTON5");
-        assert_eq!(oversized.bind, "BUTTON5");
+        assert_eq!(control.bind, "key.keyboard.right.alt");
+        assert_eq!(oversized.bind, "key.keyboard.right.alt");
     }
 }
