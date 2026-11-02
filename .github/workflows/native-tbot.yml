@@ -1,0 +1,104 @@
+name: T-Bot native CI
+
+on:
+  push:
+    branches: [native-hnmod]
+    paths:
+      - "native/tbot/**"
+      - "README.md"
+      - ".github/workflows/native-tbot.yml"
+  pull_request:
+    branches: [native-hnmod]
+    paths:
+      - "native/tbot/**"
+      - "README.md"
+      - ".github/workflows/native-tbot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tbot-native-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RUST: "1.99.1"
+  HORIZON_MODS_REV: "e5d840dabf3f8d21d6f15b793cd1fb83ed79db17"
+
+jobs:
+  test-build-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - name: Check out T-Bot
+        uses: actions/checkout@v4
+
+      - name: Install the launcher's Rust toolchain
+        run: |
+          rustup toolchain install "$RUST" --profile minimal --component rustfmt --component clippy
+          rustup default "$RUST"
+
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libudev-dev pkg-config
+
+      - name: Check formatting
+        working-directory: native/tbot
+        run: cargo fmt --check
+
+      - name: Run Clippy with warnings denied
+        working-directory: native/tbot
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+      - name: Run settings and parser tests
+        working-directory: native/tbot
+        run: cargo test --locked
+
+      - name: Prepare the official Horizon native build workspace
+        run: |
+          git clone https://github.com/horizon-rust/horizon-mods.git "$RUNNER_TEMP/horizon-mods"
+          git -C "$RUNNER_TEMP/horizon-mods" checkout "$HORIZON_MODS_REV"
+          mkdir -p "$RUNNER_TEMP/horizon-mods/native"
+          cp -R native/tbot "$RUNNER_TEMP/horizon-mods/native/tbot"
+
+      - name: Check T-Bot applied to Horizon
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 "$RUNNER_TEMP/horizon-mods/native/tools/native.py" check tbot
+
+      - name: Build the Horizon client with T-Bot
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 "$RUNNER_TEMP/horizon-mods/native/tools/native.py" build tbot
+
+      - name: Package the installable .hnmod
+        run: python3 "$RUNNER_TEMP/horizon-mods/native/tools/native.py" package tbot
+
+      - name: Validate package contents
+        run: |
+          python3 - <<'PY'
+          import glob
+          import json
+          import zipfile
+
+          path, = glob.glob("$RUNNER_TEMP/horizon-mods/native/target/tbot-*.hnmod")
+          with zipfile.ZipFile(path) as archive:
+              names = archive.namelist()
+              manifest = json.loads(archive.read("horizon-native.json"))
+          assert manifest["id"] == "tbot", manifest
+          assert manifest["game"] == "26.3", manifest
+          assert manifest["hooks"] == 359, manifest
+          assert "mixins/tbot/horizon-mixin.toml" in names, names
+          assert "mixins/tbot/runtime.rs" in names, names
+          print(json.dumps({"artifact": path, "manifest": manifest, "files": names}, indent=2))
+          PY
+
+      - name: Upload installable bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: tbot-0.2.0-hnmod
+          path: ${{ runner.temp }}/horizon-mods/native/target/tbot-0.2.0.hnmod
+          if-no-files-found: error
+          retention-days: 30
