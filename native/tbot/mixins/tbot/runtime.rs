@@ -335,7 +335,7 @@ mod tests {
 
     #[test]
     fn bind_rejects_control_characters_and_oversized_values() {
-        let control = Settings::read(|key| (key == "bind").then(|| "KEY\\nINJECT".into()));
+        let control = Settings::read(|key| (key == "bind").then(|| "KEY\nINJECT".into()));
         let oversized = Settings::read(|key| (key == "bind").then(|| "X".repeat(49)));
         assert_eq!(control.bind, "BUTTON5");
         assert_eq!(oversized.bind, "BUTTON5");
