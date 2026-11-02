@@ -67,9 +67,10 @@ jobs:
       - name: Adapt pinned build script to current Horizon binary packages
         run: |
           python3 - <<'PY'
+          import os
           from pathlib import Path
 
-          path = Path("$RUNNER_TEMP") / "horizon-mods/native/tools/native.py"
+          path = Path(os.environ["RUNNER_TEMP"]) / "horizon-mods/native/tools/native.py"
           source = path.read_text()
           old = '''    if action == "build":
           command += ["--bin", "horizon-ctl", "--profile", "fast"]
