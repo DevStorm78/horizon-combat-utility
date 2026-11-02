@@ -48,7 +48,6 @@ git clone https://github.com/horizon-rust/horizon-mods.git
 cp -R native/tbot horizon-mods/native/tbot
 cd horizon-mods
 python3 native/tools/native.py check tbot
-python3 native/tools/native.py build tbot
 python3 native/tools/native.py package tbot
 ```
 
