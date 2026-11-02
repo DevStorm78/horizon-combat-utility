@@ -51,10 +51,10 @@ python3 native/tools/native.py check tbot
 python3 native/tools/native.py package tbot
 ```
 
-The package is written to `native/target/tbot-0.2.0.hnmod`. The official
-tool downloads the pinned Horizon source and builds the client with the
-native bundle applied. The `check` and `build` commands therefore verify
-more than compiling the standalone settings crate.
+The package is written to `native/target/tbot-0.2.0.hnmod`. The `check`
+command downloads the pinned Horizon source, applies T-Bot's mixins, and runs
+Cargo's integrated Horizon check. The launcher then performs the full client
+build when you install the bundle with `native-build`.
 
 ## Install the local native bundle
 
@@ -76,8 +76,7 @@ computer permissions, so only build source you trust.
 
 ## Validation
 
-The GitHub Actions workflow runs Clippy with warnings denied,
-unit tests, Horizon integration check, full client build, and package
-validation. A successful workflow artifact is the installable `.hnmod`.
-A local Rust toolchain or a CI run is required to confirm the build; this
-README does not claim an in-launcher runtime test.
+The GitHub Actions workflow runs Clippy with warnings denied, unit tests,
+the Horizon integration check, and `.hnmod` package validation. The launcher
+performs the final client build on the computer where you install the bundle.
+The workflow does not claim an in-game runtime test.
