@@ -1,8 +1,8 @@
 //! T-Bot settings and deterministic policy values.
 //!
 //! This file is both the native bundle's injected game module and its test
-//! crate. Attack execution is intentionally not wired until its client-side
-//! target and attack path has been verified against the pinned Horizon source.
+//! crate. This bundle currently stores and presents preferences; it does not
+//! issue automated player/entity attacks.
 
 pub const ID: &str = "tbot";
 pub const NAME: &str = "T-Bot";
@@ -34,7 +34,7 @@ impl Window {
     fn encode(self) -> String { format!("{:.2},{:.2}", self.min, self.max) }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Settings {
     pub enabled: bool,
     pub target_mode: TargetMode,
@@ -148,8 +148,8 @@ impl Settings {
         ]
     }
 
-    /// The stock settings page is button-based; clicks cycle a setting.
-    /// A custom slider/dropdown screen is a later UI milestone.
+    /// Toggle or cycle non-numeric preferences from the custom panel.
+    /// Numeric preferences are changed through `set_slider`.
     pub fn click(&mut self, i: usize) {
         match i {
             0 => self.enabled = !self.enabled,
