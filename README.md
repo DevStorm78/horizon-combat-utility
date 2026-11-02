@@ -57,6 +57,31 @@ tool downloads the pinned Horizon source and builds the client with the
 native bundle applied. The `check` and `build` commands therefore verify
 more than compiling the standalone settings crate.
 
+## Install and run
+
+A native bundle is **not** a Java `mods/` JAR. The `.hnmod` file is a
+source bundle that Horizon's launcher validates and compiles into a separate,
+isolated game instance. Do not copy the `.hnmod` file into the normal
+`mods/` folder.
+
+After a successful CI build, download `tbot-0.2.0.hnmod` from the workflow's
+Artifacts section. On Linux, unpack it and ask Horizon Launcher to build it:
+
+```bash
+mkdir -p "$HOME/Downloads/tbot-native"
+unzip -o tbot-0.2.0.hnmod -d "$HOME/Downloads/tbot-native"
+horizon-launcher native-build "$HOME/Downloads/tbot-native" --instance "T-Bot" --trust-native-code
+```
+
+This requires Horizon Launcher 0.2.23 or later and a prepared Horizon 26.3
+installation. The first native build downloads the launcher's pinned Rust
+toolchain and may take a while. Read the source before trusting it: native
+mods run with your account's permissions. Launch the newly created **T-Bot**
+native-mods instance, not your ordinary instance.
+
+To inspect the CLI options before building, run
+`horizon-launcher native-build --help`.
+
 ## Validation
 
 The GitHub Actions workflow runs Clippy with warnings denied,
