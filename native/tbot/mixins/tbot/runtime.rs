@@ -328,6 +328,22 @@ mod tests {
     }
 
     #[test]
+    fn panel_rows_keep_their_click_and_slider_indices_aligned() {
+        let settings = Settings::default();
+        let labels = settings.labels();
+
+        assert_eq!(labels.len(), 21);
+        for index in [3, 4, 5, 6, 7, 8, 10] {
+            assert!(settings.slider_fill(index).is_some(), "slider row {index}");
+        }
+        for index in [0, 1, 2, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] {
+            assert!(settings.slider_fill(index).is_none(), "non-slider row {index}");
+        }
+        assert!(labels[19].contains("[click to capture]"));
+        assert_eq!(labels[20], "Reset All Settings");
+    }
+
+    #[test]
     fn extra_window_fields_are_rejected() {
         let w = Window::parse(Some("1.0,2.0,3.0".into()), Window { min: 4.0, max: 5.0 }, 0.0, 6.0);
         assert_eq!(w, Window { min: 4.0, max: 5.0 });
