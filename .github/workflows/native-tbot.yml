@@ -64,6 +64,48 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 "$RUNNER_TEMP/horizon-mods/native/tools/native.py" check tbot
 
+      - name: Adapt the pinned build helper to Horizon's split binary packages
+        run: |
+          python3 - "$RUNNER_TEMP/horizon-mods/native/tools/native.py" <<'PY'
+          import sys
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          source = path.read_text()
+          start = source.find("def cargo(stage_dir, action):")
+          end = source.find("\n\ndef package(m):", start)
+          if start < 0 or end < 0:
+              raise SystemExit("Unexpected native.py layout; refusing an unverified patch")
+          replacement = '''def cargo(stage_dir, action):
+              jobs = os.environ.get("FLEET_LOAD_JOBS") or os.environ.get("CARGO_BUILD_JOBS")
+              env = dict(os.environ, CARGO_TARGET_DIR=str(TARGET / "cargo"), RUSTFLAGS="-D warnings")
+
+              # Horizon 26.3 keeps the client executable and horizon-ctl in
+              # separate Cargo packages. Build both into the same target dir.
+              command = ["cargo", action, "--locked", "-p", "horizon-client", "--bin", "horizon-client"]
+              if action == "build":
+                  command += ["--profile", "fast"]
+              if os.environ.get("NATIVE_NO_DEFAULT_FEATURES"):
+                  command.append("--no-default-features")
+              if jobs:
+                  command += ["-j", jobs]
+              subprocess.run(command, cwd=stage_dir, env=env, check=True)
+
+              if action == "build":
+                  ctl = ["cargo", "build", "--locked", "-p", "horizon-client-lib", "--bin", "horizon-ctl", "--profile", "fast"]
+                  if os.environ.get("NATIVE_NO_DEFAULT_FEATURES"):
+                      ctl.append("--no-default-features")
+                  if jobs:
+                      ctl += ["-j", jobs]
+                  subprocess.run(ctl, cwd=stage_dir, env=env, check=True)
+
+              return TARGET / "cargo" / "fast"
+          '''
+          path.write_text(source[:start] + replacement + source[end:])
+          compile(path.read_text(), str(path), "exec")
+          print("Patched native.py build() to build the two binaries from their owning packages.")
+          PY
+
       - name: Build the Horizon client with T-Bot
         env:
           GITHUB_TOKEN: ${{ github.token }}
