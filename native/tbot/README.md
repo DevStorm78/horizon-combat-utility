@@ -44,7 +44,7 @@ A package operation creates an `.hnmod`; it does not prove runtime behaviour. Th
 - Weapon only
 - Holding-bind-only and hold bind
 
-## Performance goals
+## Current implementation boundary\n\nThe UI and settings persistence are implemented, but the module does not yet acquire combat targets or issue automated attacks. No anti-cheat bypass, concealment, or packet manipulation is included. The menu source is pinned to the Horizon revision above and still requires the user's launcher build and in-game validation.\n\n## Performance goals
 
 - No world/entity scan on render frames.
 - Tick-driven work only, with early exits while disabled or outside an eligible world.
