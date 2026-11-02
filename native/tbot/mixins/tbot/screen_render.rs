@@ -9,7 +9,7 @@ fn official_tbot_screen_render(
     let width = 286.0_f32;
     let row_h = 13.0_f32;
     let rows = m::Settings::read(|key| game.native_setting(m::ID, key)).labels();
-    let height = 34.0 + rows.len() as f32 * row_h;
+    let height = 48.0 + rows.len() as f32 * row_h;
     let x = ((screen.rect[2] - width) * 0.5).max(4.0);
     let y = ((screen.rect[3] - height) * 0.5).max(4.0);
 
