@@ -35,7 +35,7 @@ fn official_tbot_screen_render(
         } else if i % 2 == 0 {
             game.native_fill(batch, [x + 3.0, ry - 2.0, width - 6.0, row_h], 0x40232D3B);
         }
-                game.native_text(batch, label, [x + 9.0, ry + 1.0], 0xFFE6EDF5, false);
+        game.native_text(batch, label, [x + 9.0, ry + 1.0], 0xFFE6EDF5, false);
         if let Some((start, end)) = settings.slider_fill(i) {
             let track_x = x + 286.0;
             let track_y = ry + 6.0;
