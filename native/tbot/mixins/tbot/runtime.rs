@@ -87,7 +87,12 @@ impl Default for Settings {
 impl Settings {
     pub fn read(mut get: impl FnMut(&str) -> Option<String>) -> Self {
         let mut s = Self::default();
-        let boolean = |v: Option<String>, d| v.map(|x| x == "1" || x == "true").unwrap_or(d);
+        // Unknown persisted values fall back to the default instead of silently disabling a setting.
+        let boolean = |v: Option<String>, d| match v.as_deref() {
+            Some("1" | "true") => true,
+            Some("0" | "false") => false,
+            _ => d,
+        };
         s.enabled = boolean(get("enabled"), s.enabled);
         s.range_variability = boolean(get("range_variability"), s.range_variability);
         s.smart_crits = boolean(get("smart_crits"), s.smart_crits);
@@ -107,7 +112,9 @@ impl Settings {
         s.miss_chance = get("miss_chance").and_then(|v| v.parse().ok()).unwrap_or(s.miss_chance).min(100);
         s.target_mode = match get("target_mode").as_deref() { Some("players") => TargetMode::Players, Some("mobs") => TargetMode::Mobs, _ => TargetMode::Anyone };
         s.sweep_mode = match get("sweep_mode").as_deref() { Some("always") => SweepMode::Always, Some("never") => SweepMode::Never, _ => SweepMode::Dynamic };
-        s.bind = get("bind").filter(|v| !v.is_empty()).unwrap_or(s.bind);
+        s.bind = get("bind")
+            .filter(|v| !v.trim().is_empty() && v.len() <= 48 && !v.chars().any(char::is_control))
+            .unwrap_or(s.bind);
         s
     }
 
@@ -216,5 +223,30 @@ mod tests {
     fn windows_are_clamped_and_sorted() {
         let w = Window::parse(Some("9.0,-1.0".into()), Window {min:1.0,max:2.0}, 0.0, 6.0);
         assert_eq!(w, Window { min: 0.0, max: 6.0 });
+    }
+
+    #[test]
+    fn malformed_persisted_values_fall_back_to_defaults() {
+        let s = Settings::read(|key| match key {
+            "enabled" => Some("perhaps".into()),
+            "range" => Some("NaN,4.0".into()),
+            "reaction_ms" => Some("-1".into()),
+            "miss_chance" => Some("999".into()),
+            "bind" => Some("".into()),
+            _ => None,
+        });
+        assert!(!s.enabled);
+        assert_eq!(s.range, Settings::default().range);
+        assert_eq!(s.reaction_ms, 0);
+        assert_eq!(s.miss_chance, 100);
+        assert_eq!(s.bind, "BUTTON5");
+    }
+
+    #[test]
+    fn bind_rejects_control_characters_and_oversized_values() {
+        let control = Settings::read(|key| (key == "bind").then(|| "KEY\\nINJECT".into()));
+        let oversized = Settings::read(|key| (key == "bind").then(|| "X".repeat(49)));
+        assert_eq!(control.bind, "BUTTON5");
+        assert_eq!(oversized.bind, "BUTTON5");
     }
 }
