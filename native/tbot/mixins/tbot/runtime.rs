@@ -1,7 +1,3 @@
-//!
-//! This file is both the native bundle's injected game module and its test
-//! crate. This bundle currently stores and presents preferences; it does not
-//! issue automated player/entity attacks.
 
 pub const ID: &str = "tbot";
 pub const NAME: &str = "T-Bot";
