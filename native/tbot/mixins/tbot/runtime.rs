@@ -314,6 +314,25 @@ mod tests {
     }
 
     #[test]
+    fn toggles_cycle_and_reset_restores_defaults() {
+        let mut s = Settings::default();
+        s.click(0);
+        assert!(s.enabled);
+        s.click(1);
+        assert_eq!(s.target_mode, TargetMode::Players);
+        s.click(1);
+        assert_eq!(s.target_mode, TargetMode::Mobs);
+        s.click(1);
+        assert_eq!(s.target_mode, TargetMode::Anyone);
+        s.click(12);
+        assert_eq!(s.sweep_mode, SweepMode::Always);
+        s.click(12);
+        assert_eq!(s.sweep_mode, SweepMode::Never);
+        s.click(20);
+        assert_eq!(s, Settings::default());
+    }
+
+    #[test]
     fn extra_window_fields_are_rejected() {
         let w = Window::parse(Some("1.0,2.0,3.0".into()), Window { min: 4.0, max: 5.0 }, 0.0, 6.0);
         assert_eq!(w, Window { min: 4.0, max: 5.0 });
