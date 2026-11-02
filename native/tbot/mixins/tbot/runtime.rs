@@ -1,0 +1,220 @@
+//! T-Bot settings and deterministic policy values.
+//!
+//! This file is both the native bundle's injected game module and its test
+//! crate. Attack execution is intentionally not wired until its client-side
+//! target and attack path has been verified against the pinned Horizon source.
+
+pub const ID: &str = "tbot";
+pub const NAME: &str = "T-Bot";
+pub const VERSION: &str = "0.1.0";
+pub const DESCRIPTION: &str = "Configurable combat timing module";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TargetMode { Anyone, Players, Mobs }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SweepMode { Dynamic, Always, Never }
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Window { pub min: f32, pub max: f32 }
+
+impl Window {
+    fn parse(value: Option<String>, default: Self, low: f32, high: f32) -> Self {
+        let Some(value) = value else { return default };
+        let mut parts = value.split(',');
+        let a = parts.next().and_then(|v| v.parse::<f32>().ok());
+        let b = parts.next().and_then(|v| v.parse::<f32>().ok());
+        match (a, b) {
+            (Some(a), Some(b)) if a.is_finite() && b.is_finite() =>
+                Self { min: a.clamp(low, high).min(b.clamp(low, high)), max: a.clamp(low, high).max(b.clamp(low, high)) },
+            _ => default,
+        }
+    }
+    fn encode(self) -> String { format!("{:.2},{:.2}", self.min, self.max) }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Settings {
+    pub enabled: bool,
+    pub target_mode: TargetMode,
+    pub range_variability: bool,
+    pub range: Window,
+    pub sword_cooldown: Window,
+    pub axe_cooldown: Window,
+    pub reaction_ms: u16,
+    pub miss_chance: u8,
+    pub miss_range: Window,
+    pub smart_crits: bool,
+    pub crit_delay_ms: Window,
+    pub reduce_sweeps: bool,
+    pub sweep_mode: SweepMode,
+    pub ignore_shields: bool,
+    pub piercing: bool,
+    pub players_only: bool,
+    pub hit_invisible_players: bool,
+    pub weapon_only: bool,
+    pub holding_bind_only: bool,
+    pub bind: String,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            target_mode: TargetMode::Anyone,
+            range_variability: true,
+            range: Window { min: 3.0, max: 3.0 },
+            sword_cooldown: Window { min: 0.89, max: 0.93 },
+            axe_cooldown: Window { min: 0.89, max: 0.93 },
+            reaction_ms: 0,
+            miss_chance: 7,
+            miss_range: Window { min: 3.0, max: 3.5 },
+            smart_crits: true,
+            crit_delay_ms: Window { min: 10.0, max: 10.0 },
+            reduce_sweeps: true,
+            sweep_mode: SweepMode::Dynamic,
+            ignore_shields: false,
+            piercing: false,
+            players_only: false,
+            hit_invisible_players: true,
+            weapon_only: false,
+            holding_bind_only: true,
+            bind: "BUTTON5".into(),
+        }
+    }
+}
+
+impl Settings {
+    pub fn read(mut get: impl FnMut(&str) -> Option<String>) -> Self {
+        let mut s = Self::default();
+        let boolean = |v: Option<String>, d| v.map(|x| x == "1" || x == "true").unwrap_or(d);
+        s.enabled = boolean(get("enabled"), s.enabled);
+        s.range_variability = boolean(get("range_variability"), s.range_variability);
+        s.smart_crits = boolean(get("smart_crits"), s.smart_crits);
+        s.reduce_sweeps = boolean(get("reduce_sweeps"), s.reduce_sweeps);
+        s.ignore_shields = boolean(get("ignore_shields"), s.ignore_shields);
+        s.piercing = boolean(get("piercing"), s.piercing);
+        s.players_only = boolean(get("players_only"), s.players_only);
+        s.hit_invisible_players = boolean(get("hit_invisible_players"), s.hit_invisible_players);
+        s.weapon_only = boolean(get("weapon_only"), s.weapon_only);
+        s.holding_bind_only = boolean(get("holding_bind_only"), s.holding_bind_only);
+        s.range = Window::parse(get("range"), s.range, 0.0, 6.0);
+        s.sword_cooldown = Window::parse(get("sword_cooldown"), s.sword_cooldown, 0.0, 1.0);
+        s.axe_cooldown = Window::parse(get("axe_cooldown"), s.axe_cooldown, 0.0, 1.0);
+        s.miss_range = Window::parse(get("miss_range"), s.miss_range, 0.0, 6.0);
+        s.crit_delay_ms = Window::parse(get("crit_delay_ms"), s.crit_delay_ms, 0.0, 1000.0);
+        s.reaction_ms = get("reaction_ms").and_then(|v| v.parse().ok()).unwrap_or(s.reaction_ms).min(2000);
+        s.miss_chance = get("miss_chance").and_then(|v| v.parse().ok()).unwrap_or(s.miss_chance).min(100);
+        s.target_mode = match get("target_mode").as_deref() { Some("players") => TargetMode::Players, Some("mobs") => TargetMode::Mobs, _ => TargetMode::Anyone };
+        s.sweep_mode = match get("sweep_mode").as_deref() { Some("always") => SweepMode::Always, Some("never") => SweepMode::Never, _ => SweepMode::Dynamic };
+        s.bind = get("bind").filter(|v| !v.is_empty()).unwrap_or(s.bind);
+        s
+    }
+
+    pub fn labels(&self) -> Vec<String> {
+        vec![
+            format!("Module: {}", if self.enabled { "ON" } else { "OFF" }),
+            format!("Target Mode: {}", match self.target_mode { TargetMode::Anyone => "Anyone", TargetMode::Players => "Players", TargetMode::Mobs => "Mobs" }),
+            format!("Range Variability: {}", on(self.range_variability)),
+            format!("Range: {:.2}-{:.2}m", self.range.min, self.range.max),
+            format!("Sword Cooldown: {:.2}-{:.2}", self.sword_cooldown.min, self.sword_cooldown.max),
+            format!("Axe Cooldown: {:.2}-{:.2}", self.axe_cooldown.min, self.axe_cooldown.max),
+            format!("Reaction Time: {}ms", self.reaction_ms),
+            format!("Miss Chance: {}%", self.miss_chance),
+            format!("Miss Range: {:.2}-{:.2}m", self.miss_range.min, self.miss_range.max),
+            format!("Smart Crits: {}", on(self.smart_crits)),
+            format!("Crit Delay: {:.0}-{:.0}ms", self.crit_delay_ms.min, self.crit_delay_ms.max),
+            format!("Reduce Sweeps: {}", on(self.reduce_sweeps)),
+            format!("Reduce Sweeps Mode: {}", match self.sweep_mode { SweepMode::Dynamic => "Dynamic", SweepMode::Always => "Always", SweepMode::Never => "Never" }),
+            format!("Ignore Shields: {}", on(self.ignore_shields)),
+            format!("Piercing: {}", on(self.piercing)),
+            format!("Players Only: {}", on(self.players_only)),
+            format!("Hit Invisible Players: {}", on(self.hit_invisible_players)),
+            format!("Weapon Only: {}", on(self.weapon_only)),
+            format!("Holding Bind Only: {}", on(self.holding_bind_only)),
+            format!("Hold Bind: {}", self.bind),
+        ]
+    }
+
+    /// The stock settings page is button-based; clicks cycle a setting.
+    /// A custom slider/dropdown screen is a later UI milestone.
+    pub fn click(&mut self, i: usize) {
+        match i {
+            0 => self.enabled = !self.enabled,
+            1 => self.target_mode = match self.target_mode { TargetMode::Anyone => TargetMode::Players, TargetMode::Players => TargetMode::Mobs, TargetMode::Mobs => TargetMode::Anyone },
+            2 => self.range_variability = !self.range_variability,
+            3 => self.range = cycle_window(self.range, &[Window{min:2.5,max:3.0}, Window{min:3.0,max:3.5}, Window{min:3.0,max:3.0}]),
+            4 => self.sword_cooldown = cycle_window(self.sword_cooldown, &[Window{min:0.85,max:0.90},Window{min:0.89,max:0.93},Window{min:0.95,max:1.0}]),
+            5 => self.axe_cooldown = cycle_window(self.axe_cooldown, &[Window{min:0.85,max:0.90},Window{min:0.89,max:0.93},Window{min:0.95,max:1.0}]),
+            6 => self.reaction_ms = if self.reaction_ms >= 250 { 0 } else { self.reaction_ms + 25 },
+            7 => self.miss_chance = (self.miss_chance + 5) % 105,
+            8 => self.miss_range = cycle_window(self.miss_range, &[Window{min:2.5,max:3.0},Window{min:3.0,max:3.5},Window{min:3.5,max:4.0}]),
+            9 => self.smart_crits = !self.smart_crits,
+            10 => self.crit_delay_ms = cycle_window(self.crit_delay_ms, &[Window{min:0.0,max:10.0},Window{min:10.0,max:20.0},Window{min:20.0,max:40.0}]),
+            11 => self.reduce_sweeps = !self.reduce_sweeps,
+            12 => self.sweep_mode = match self.sweep_mode { SweepMode::Dynamic => SweepMode::Always, SweepMode::Always => SweepMode::Never, SweepMode::Never => SweepMode::Dynamic },
+            13 => self.ignore_shields = !self.ignore_shields,
+            14 => self.piercing = !self.piercing,
+            15 => self.players_only = !self.players_only,
+            16 => self.hit_invisible_players = !self.hit_invisible_players,
+            17 => self.weapon_only = !self.weapon_only,
+            18 => self.holding_bind_only = !self.holding_bind_only,
+            _ => {}
+        }
+    }
+
+    pub fn stored(&self) -> Vec<(&'static str, String)> {
+        vec![
+            ("enabled", b(self.enabled)), ("target_mode", match self.target_mode { TargetMode::Anyone => "anyone", TargetMode::Players => "players", TargetMode::Mobs => "mobs" }.into()),
+            ("range_variability", b(self.range_variability)), ("range", self.range.encode()),
+            ("sword_cooldown", self.sword_cooldown.encode()), ("axe_cooldown", self.axe_cooldown.encode()),
+            ("reaction_ms", self.reaction_ms.to_string()), ("miss_chance", self.miss_chance.to_string()),
+            ("miss_range", self.miss_range.encode()), ("smart_crits", b(self.smart_crits)),
+            ("crit_delay_ms", self.crit_delay_ms.encode()), ("reduce_sweeps", b(self.reduce_sweeps)),
+            ("sweep_mode", match self.sweep_mode { SweepMode::Dynamic => "dynamic", SweepMode::Always => "always", SweepMode::Never => "never" }.into()),
+            ("ignore_shields", b(self.ignore_shields)), ("piercing", b(self.piercing)),
+            ("players_only", b(self.players_only)), ("hit_invisible_players", b(self.hit_invisible_players)),
+            ("weapon_only", b(self.weapon_only)), ("holding_bind_only", b(self.holding_bind_only)),
+            ("bind", self.bind.clone()),
+        ]
+    }
+}
+
+fn on(v: bool) -> &'static str { if v { "ON" } else { "OFF" } }
+fn b(v: bool) -> String { if v { "1" } else { "0" }.into() }
+fn cycle_window(current: Window, choices: &[Window]) -> Window {
+    let i = choices.iter().position(|v| *v == current).unwrap_or(choices.len() - 1);
+    choices[(i + 1) % choices.len()]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn defaults_match_the_reference_panel() {
+        let s = Settings::default();
+        assert_eq!(s.target_mode, TargetMode::Anyone);
+        assert_eq!(s.range, Window { min: 3.0, max: 3.0 });
+        assert_eq!(s.sword_cooldown, Window { min: 0.89, max: 0.93 });
+        assert_eq!(s.axe_cooldown, Window { min: 0.89, max: 0.93 });
+        assert_eq!(s.miss_chance, 7);
+        assert_eq!(s.miss_range, Window { min: 3.0, max: 3.5 });
+        assert_eq!(s.sweep_mode, SweepMode::Dynamic);
+        assert_eq!(s.bind, "BUTTON5");
+    }
+
+    #[test]
+    fn settings_round_trip() {
+        let original = Settings::default();
+        let values = original.stored();
+        let restored = Settings::read(|key| values.iter().find(|(k, _)| *k == key).map(|(_, v)| v.clone()));
+        assert_eq!(restored, original);
+    }
+
+    #[test]
+    fn windows_are_clamped_and_sorted() {
+        let w = Window::parse(Some("9.0,-1.0".into()), Window {min:1.0,max:2.0}, 0.0, 6.0);
+        assert_eq!(w, Window { min: 0.0, max: 6.0 });
+    }
+}
