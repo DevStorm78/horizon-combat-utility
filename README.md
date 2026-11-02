@@ -14,7 +14,7 @@ T-Bot is a native Rust mixin bundle for Horizon 26.3. It is built as an
   its lower/primary value; right-click to set its upper value. Scalar values
   use either click button.
 - The hold-bind row captures keyboard keys and mouse buttons 2–5.
-- Reset All Settings restores the defaults and exits bind capture.
+- Reset All Settings restores the defaults; Escape cancels an active bind capture.
 - Persisted numbers are clamped and malformed values fall back to safe defaults.
 
 ## Important scope
