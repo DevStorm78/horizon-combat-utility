@@ -49,6 +49,12 @@ fn official_tbot_screen_render(
                     [track_x + left * track_w, track_y, (right - left) * track_w, 4.0],
                     0xFFFFC857,
                 );
+            } else {
+                game.native_fill(
+                    batch,
+                    [track_x + left * track_w - 1.0, track_y - 2.0, 2.0, 8.0],
+                    0xFFFFC857,
+                );
             }
         }
     }
