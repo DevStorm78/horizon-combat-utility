@@ -87,6 +87,10 @@ native-mods instance, not your ordinary instance.
 To inspect the CLI options before building, run
 `horizon-launcher native-build --help`.
 
+The extracted folder passed to `native-build` must directly contain
+`horizon-native.json` and the `mixins/` directory. Keep the `mixins/tbot/`
+folder structure intact when extracting the archive.
+
 ## Validation
 
 The GitHub Actions workflow runs Clippy with warnings denied,
