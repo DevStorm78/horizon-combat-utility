@@ -57,6 +57,24 @@ tool downloads the pinned Horizon source and builds the client with the
 native bundle applied. The `check` and `build` commands therefore verify
 more than compiling the standalone settings crate.
 
+## Install the local native bundle
+
+The packaged `.hnmod` is a Horizon **native mod**, not a Java/Fabric JAR or a
+content `.hmod`. Do not put it in the ordinary `mods/` or `horizon-mods/`
+content-mod folder.
+
+With Horizon launcher 0.2.23 or later, build and install the local bundle into
+Horizon’s isolated Native mods instance:
+
+```bash
+horizon-launcher native-build /absolute/path/to/tbot-0.2.0.hnmod --trust-native-code
+```
+
+Then select the **Native mods** instance in the launcher and press Play. The
+first build downloads the launcher's own Rust toolchain and can take 20–30
+minutes; subsequent builds are faster. Native mods run with your account's
+computer permissions, so only build source you trust.
+
 ## Validation
 
 The GitHub Actions workflow runs Clippy with warnings denied,
