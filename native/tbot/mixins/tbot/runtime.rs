@@ -83,7 +83,7 @@ impl Default for Settings {
             hit_invisible_players: true,
             weapon_only: false,
             holding_bind_only: true,
-            bind: "BUTTON5".into(),
+            bind: "key.keyboard.right.alt".into(),
         }
     }
 }
@@ -145,7 +145,7 @@ impl Settings {
             format!("Players Only: {}", on(self.players_only)),
             format!("Hit Invisible Players: {}", on(self.hit_invisible_players)),
             format!("Weapon Only: {}", on(self.weapon_only)),
-            format!("Holding Bind Only: {}", on(self.holding_bind_only)),
+            format!("Hold to Activate: {}", on(self.holding_bind_only)),
             format!("Hold Bind: {}  [click to capture]", display_bind(&self.bind)),
             "Reset All Settings".into(),
         ]
