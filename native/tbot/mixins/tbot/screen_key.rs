@@ -9,29 +9,25 @@ fn official_tbot_screen_key(
     use crate::game::official_tbot as m;
     if game.native_mod_screen() != Some(m::ID) || repeat { return; }
 
-    let capturing = game.native_setting(m::ID, "capture_bind").as_deref() == Some("1");
-    if capturing {
-        if key == "key.keyboard.escape" {
-            game.native_set_setting(m::ID, "capture_bind", "0");
-            *canceled = true;
-            return;
-        }
-        if key == "key.keyboard.right.shift" {
-            game.native_set_setting(m::ID, "capture_bind", "0");
-            game.native_mod_screen_close(m::ID);
-            *canceled = true;
-            return;
-        }
-        if key.starts_with("key.keyboard.") {
-            game.native_set_setting(m::ID, "bind", key);
-            game.native_set_setting(m::ID, "capture_bind", "0");
-            *canceled = true;
-        }
+    if game.native_setting(m::ID, "capture_bind").as_deref() != Some("1") {
+        // Let vanilla Escape close the screen and let the native key hook
+        // handle Right Shift after this pre-hook.
         return;
     }
 
-    if key == "key.keyboard.right.shift" || key == "key.keyboard.escape" {
-        game.native_mod_screen_close(m::ID);
+    if key == "key.keyboard.escape" {
+        game.native_set_setting(m::ID, "capture_bind", "0");
+        *canceled = true;
+        return;
+    }
+    if key == "key.keyboard.right.shift" {
+        // Do not cancel: key.rs sees it and closes the menu.
+        game.native_set_setting(m::ID, "capture_bind", "0");
+        return;
+    }
+    if key.starts_with("key.keyboard.") {
+        game.native_set_setting(m::ID, "bind", key);
+        game.native_set_setting(m::ID, "capture_bind", "0");
         *canceled = true;
     }
 }
