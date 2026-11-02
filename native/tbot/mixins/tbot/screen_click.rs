@@ -14,8 +14,8 @@ fn official_tbot_screen_click(
             let bind = format!("BUTTON{}", button + 1);
             game.native_set_setting(m::ID, "bind", &bind);
             game.native_set_setting(m::ID, "capture_bind", "0");
-            *canceled = true;
         }
+        *canceled = true;
         return;
     }
 
@@ -28,7 +28,7 @@ fn official_tbot_screen_click(
     let x = ((screen.rect[2] - width) * 0.5).max(4.0);
     let y = ((screen.rect[3] - height) * 0.5).max(4.0);
     let local_x = screen.mouse[0] - x;
-    let local_y = screen.mouse[1] - y - 46.0;
+    let local_y = screen.mouse[1] - y - 48.0;
     if local_x < 0.0 || local_x > width || local_y < 0.0 {
         return;
     }
