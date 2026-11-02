@@ -4,6 +4,25 @@ pub const NAME: &str = "T-Bot";
 pub const VERSION: &str = "0.3.0";
 pub const DESCRIPTION: &str = "Configurable combat preferences and timing profile";
 
+use std::sync::atomic::AtomicBool;
+/// Transient key state: never written to the settings directory.
+pub static HOLD_BIND_DOWN: AtomicBool = AtomicBool::new(false);
+
+pub fn should_trigger(
+    enabled: bool,
+    hold_only: bool,
+    bind_down: bool,
+    in_world: bool,
+    has_target: bool,
+    attack_strength: f32,
+) -> bool {
+    enabled
+        && (!hold_only || bind_down)
+        && in_world
+        && has_target
+        && attack_strength >= 0.9
+}
+
 /// Center the settings panel inside Horizon's [x, y, width, height] screen rect.
 pub fn screen_panel_origin(rect: [f32; 4], width: f32, height: f32) -> [f32; 2] {
     [
