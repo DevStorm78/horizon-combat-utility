@@ -1,70 +1,66 @@
-# Horizon Combat Utility
+# T-Bot — Horizon native mod
 
-A minimal Rust/WASM mod for [Horizon](https://github.com/ludovic111/horizon).
+T-Bot is a native Rust mixin bundle for Horizon 26.3. It is built as an
+`.hnmod` against the pinned Horizon and horizon-mixins revisions in
+`compatibility.json`.
 
-## What works
+## Included
 
-- Minimal HUD with health, hunger, coordinates, held item/slot, and attack/use clicks per second.
-- `/combat` commands for status, module preferences, profiles, and HUD visibility.
-- Persistent module toggles through the mod storage API.
-- Experimental input event polling; no custom textures or animations.
+- Right Shift opens and closes the T-Bot settings screen.
+- Escape closes the screen; while a bind is being captured, Escape cancels capture.
+- Settings are persisted through Horizon's native mod settings store.
+- Boolean and enum preferences can be changed from the panel.
+- Numeric preferences have adjustable sliders. Left-click the slider to set
+  its lower/primary value; right-click to set its upper value. Scalar values
+  use either click button.
+- The hold-bind row captures keyboard keys and mouse buttons 2–5.
+- Reset All Settings restores the defaults and exits bind capture.
+- Persisted numbers are clamped and malformed values fall back to safe defaults.
 
-## Combat module support
+## Important scope
 
-| Module | Status |
-|---|---|
-| Triggerbot | **Unsupported action** — no entity targeting or attack-action API |
-| W-tap | **Unsupported action** — no movement-input injection API |
-| Mace swap | **Unsupported action** — no inventory/held-slot switching API |
-| Auto lunge | **Unsupported action** — no attack/item action API |
-| Shield breaker | **Unsupported action** — no target/entity interaction API |
-| Jump reset | **Unsupported action** — no movement-input injection API |
-| Sprint reset | **Unsupported action** — no movement-input injection API |
-| Cooldown tracker | **Partial** — click rate and held-item telemetry only; no attack cooldown field |
-| Click trainer | **Partial** — live attack/use CPS; no training overlay or target feedback |
+The current public native hooks let this bundle provide a native settings
+screen and store preferences, but this project does **not** currently perform
+automatic player/entity selection or issue attacks, change inventory slots,
+inject movement input, or evade server protections. The combat-related values
+are configuration preferences; they are not claimed to drive an automated
+combat routine. I will not describe the client as a completed auto-combat bot
+when those game-action paths are not implemented.
 
-Module switches are preferences and status labels. They do not perform the unsupported actions. The public API's experimental input interface reports registered keys, held items, mappings, and clicks per second; it does not expose a general-purpose API for attack, entity selection, inventory switching, or movement-input injection.
-
-No anti-cheat evasion, stealth, memory patching, or process injection is implemented.
-
-## Commands
-
-- `/combat` or `/combat status`
-- `/combat help`
-- `/combat modules`
-- `/combat toggle triggerbot`
-- `/combat on wtap` / `/combat off wtap`
-- `/combat profile minimal`
-- `/combat profile practice`
-- `/combat profile custom`
-- `/combat coach on` / `/combat coach off` — observes attack/forward timing and counts detected W-tap sequences; it does not press keys for you.
-- `/combat hud on` / `/combat hud off`
-
-Names accept hyphens or underscores.
+No anti-cheat evasion, concealment, memory patching, or process injection is
+included.
 
 ## Build on Linux / CachyOS
 
-Install Rust and add the WASM target:
+Install Rust and the native dependencies:
 
 ```bash
-rustup target add wasm32-unknown-unknown
-cargo install --git https://github.com/ludovic111/horizon cargo-horizon-mod
-cargo horizon-mod build
-cargo horizon-mod test
+rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+rustup default 1.99.1
+sudo pacman -S --needed base-devel pkgconf alsa-lib systemd-libs
 ```
 
-The expected package is `target/horizon-mod/horizon_combat_utility.hmod`. The build requires network access to fetch Horizon's SDK and toolchain.
+The official build script lives in the Horizon native-mods repository. Copy
+this bundle into that workspace and run its checks:
 
-Install by copying the generated package into Horizon's mod directory, or use Horizon's **Open Mod Folder** action. The mod declares the experimental `input` capability explicitly in its manifest.
+```bash
+git clone https://github.com/horizon-rust/horizon-mods.git
+cp -R native/tbot horizon-mods/native/tbot
+cd horizon-mods
+python3 native/tools/native.py check tbot
+python3 native/tools/native.py build tbot
+python3 native/tools/native.py package tbot
+```
 
-## Build verification
+The package is written to `native/target/tbot-0.2.0.hnmod`. The official
+tool downloads the pinned Horizon source and builds the client with the
+native bundle applied. The `check` and `build` commands therefore verify
+more than compiling the standalone settings crate.
 
-**Verified on 2026-10-27:** [GitHub Actions run #40506576964](https://github.com/DevStorm78/horizon-combat-utility/actions/runs/40506576964) completed successfully. Both **Build .hmod** and **Run sandbox tests** passed, and the workflow uploaded a `.hmod` artifact.
+## Validation
 
-[Download the CI artifact](https://github.com/DevStorm78/horizon-combat-utility/actions/runs/40506576964) from the run's **Artifacts** section. GitHub Actions artifacts expire; this one is scheduled to expire on 2027-01-25. This is a CI artifact, not yet a permanent GitHub Release asset.
-
-GitHub Actions builds the WASM component and runs the mod's sandbox test script on pushes and pull requests.
-
-## Important limitation
-
-This is a functional minimal HUD and input-timing coach, **not a working automated combat client yet**. The current public Horizon mod API does not expose the entity targeting, attack/movement input injection, or inventory switching needed for the requested automation. The module toggles are preferences/status only for those unsupported actions. A true triggerbot, automatic W-tap, mace swap, auto lunge, shield breaker, and jump reset require changes to Horizon's engine/API before this mod can implement them.
+The GitHub Actions workflow runs formatting, Clippy with warnings denied,
+unit tests, Horizon integration check, full client build, and package
+validation. A successful workflow artifact is the installable `.hnmod`.
+A local Rust toolchain or a CI run is required to confirm the build; this
+README does not claim an in-launcher runtime test.
