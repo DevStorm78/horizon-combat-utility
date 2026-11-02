@@ -1,41 +1,54 @@
 # T-Bot — Horizon native mod
 
-This is the native-mod implementation track for the Horizon Combat Utility project. It produces an `.hnmod` bundle, not a sandboxed `.hmod`.
+T-Bot is being developed as a native Horizon `.hnmod` bundle. Native mods are compiled into an isolated Horizon game build; they run with the player's account permissions. This project is intended for singleplayer, private testing, and multiplayer servers that explicitly permit automation. It does not attempt to hide from server-side enforcement.
 
-## Build model
+## Compatibility and build
 
-Horizon native mods are mixin bundles compiled into a game build by the Horizon launcher. This bundle uses Horizon's **named, versioned native hook points** rather than hard-coded Rust function targets. The current verified compatibility target is Minecraft 26.3, native hook API 359, tested against Horizon revision `8dd76f8d48dc606cfa44f3262086584e09f64e4b`.
+- Minecraft: 26.3
+- Horizon native hook API: 359
+- Horizon source tested/pinned: `8dd76f8d48dc606cfa44f3262086584e09f64e4b`
+- Horizon Mixins pinned: `ddd9700b21997c95d95ac6ee5ecafe3830cf622a`
 
-The launcher can build hook-based bundles on later Horizon revisions as long as the required hook API versions remain available. The pinned revision records the source used for validation; it is not an anti-cheat or concealment mechanism.
+The manifest uses named, versioned hooks. The hook catalog in the pinned Horizon source reports API 359, and the pinned Mixins parser supports `hook` + `hook_version`. The native-mod tooling is maintained in the separate `horizon-rust/horizon-mods` repository; this project repository does not contain `native/tools/native.py`.
 
-## Current milestone
-
-The bundle registers T-Bot in Options → Mods and exposes a persistent settings model through Horizon's built-in native settings page. That page currently consists of button rows. It is a temporary settings interface, not the requested Orchard-style menu.
-
-**Attack execution is not implemented.** The current code does not yet identify client-side targets or issue attacks. The dedicated Right-Shift menu, real sliders/dropdowns, keybind capture/reset, and attack integration remain future milestones and must be validated against Horizon's actual client APIs.
-
-## Requested settings
-
-- Bind / Reset Module
-- Target Mode
-- Range Variability and range
-- Sword Cooldown and Axe Cooldown
-- Reaction Time
-- Miss Chance and Miss Range
-- Smart Crits and Crit Delay
-- Reduce Sweeps and mode
-- Ignore Shields and Piercing
-- Players Only and Hit Invisible Players
-- Weapon Only
-- Holding Bind Only and Hold Bind
-
-## Build
-
-From a checkout of this repository, use the matching Horizon native-mod tooling:
+To validate locally, clone the official native-mod tooling repository, copy this project's `native/tbot` directory into its `native/tbot` directory, then run from that checkout:
 
 ```sh
 python3 native/tools/native.py check tbot
+python3 native/tools/native.py build tbot
 python3 native/tools/native.py package tbot
 ```
 
-Packaging creates the `.hnmod` archive. A successful package operation alone does not mean the game compiles or that runtime behaviour works. The mod also needs to be included in the Horizon native-mod registry before the launcher can offer it for installation.
+A package operation creates an `.hnmod`; it does not prove runtime behaviour. The check/build steps compile against the pinned Horizon source. The launcher registry is separate and requires its own reviewed submission process.
+
+## Current implementation status
+
+- T-Bot registers in Options → Mods.
+- Settings are persisted through Horizon's native settings storage.
+- The stock settings page is still a temporary button-list UI.
+- The custom Right-Shift menu, slider/dropdown widgets, bind capture/reset, and gameplay integration are not complete.
+- No attack execution is currently wired. The code must not be described as a working combat bot until target selection, timing, attack dispatch, and in-game behaviour have been implemented and tested.
+
+## Planned settings
+
+- Module bind and reset
+- Target mode
+- Range variability and range
+- Sword and axe cooldown windows
+- Reaction time
+- Miss chance and miss range
+- Smart crits and crit delay
+- Reduce sweeps and sweep mode
+- Ignore shields and piercing
+- Players only and hit invisible players
+- Weapon only
+- Holding-bind-only and hold bind
+
+## Performance goals
+
+- No world/entity scan on render frames.
+- Tick-driven work only, with early exits while disabled or outside an eligible world.
+- Avoid per-tick heap allocations and repeated filesystem reads.
+- Cache configuration in memory; persist only on changes.
+- Keep UI drawing isolated from gameplay logic.
+- Measure release-build tick cost before calling the module multiplayer-optimized.
