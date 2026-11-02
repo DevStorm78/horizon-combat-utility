@@ -1,4 +1,3 @@
-//! T-Bot settings and deterministic policy values.
 //!
 //! This file is both the native bundle's injected game module and its test
 //! crate. This bundle currently stores and presents preferences; it does not
