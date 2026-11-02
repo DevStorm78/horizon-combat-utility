@@ -2,22 +2,22 @@ fn official_tbot_tick(game: &mut crate::game::Game<'_>) {
     use crate::game::official_tbot as m;
 
     let settings = m::Settings::read(|key| game.native_setting(m::ID, key));
-    if !settings.enabled {
-        return;
-    }
-    if settings.holding_bind_only
-        && game.native_setting(m::ID, "bind_down").as_deref() != Some("1")
-    {
-        return;
-    }
-    if game.native_mod_screen() == Some(m::ID) || game.player.is_none() {
+    use std::sync::atomic::Ordering;
+
+    let in_world = game.native_mod_screen() != Some(m::ID) && game.player.is_some();
+    let has_target = game.mob_hit().is_some();
+    if !m::should_trigger(
+        settings.enabled,
+        settings.holding_bind_only,
+        m::HOLD_BIND_DOWN.load(Ordering::Relaxed),
+        in_world,
+        has_target,
+        game.attack_strength_scale(),
+    ) {
         return;
     }
 
-    // Use Horizon's normal crosshair ray and attack implementation. The
-    // triggerbot never selects targets behind walls or outside entity reach.
-    if game.attack_strength_scale() < 0.9 || game.mob_hit().is_none() {
-        return;
-    }
+    // Horizon's normal attack path uses the current crosshair hit and its
+    // ordinary reach/game-mode checks; no alternate target selection occurs.
     let _ = game.attack();
 }
