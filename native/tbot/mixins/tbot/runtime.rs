@@ -24,6 +24,7 @@ impl Window {
         let mut parts = value.split(',');
         let a = parts.next().and_then(|v| v.parse::<f32>().ok());
         let b = parts.next().and_then(|v| v.parse::<f32>().ok());
+        if parts.next().is_some() { return default; }
         match (a, b) {
             (Some(a), Some(b)) if a.is_finite() && b.is_finite() =>
                 Self { min: a.clamp(low, high).min(b.clamp(low, high)), max: a.clamp(low, high).max(b.clamp(low, high)) },
@@ -109,7 +110,10 @@ impl Settings {
         s.miss_range = Window::parse(get("miss_range"), s.miss_range, 0.0, 6.0);
         s.crit_delay_ms = Window::parse(get("crit_delay_ms"), s.crit_delay_ms, 0.0, 1000.0);
         s.reaction_ms = get("reaction_ms").and_then(|v| v.parse().ok()).unwrap_or(s.reaction_ms).min(2000);
-        s.miss_chance = get("miss_chance").and_then(|v| v.parse().ok()).unwrap_or(s.miss_chance).min(100);
+        s.miss_chance = get("miss_chance")
+            .and_then(|v| v.parse::<u16>().ok())
+            .unwrap_or(s.miss_chance as u16)
+            .min(100) as u8;
         s.target_mode = match get("target_mode").as_deref() { Some("players") => TargetMode::Players, Some("mobs") => TargetMode::Mobs, _ => TargetMode::Anyone };
         s.sweep_mode = match get("sweep_mode").as_deref() { Some("always") => SweepMode::Always, Some("never") => SweepMode::Never, _ => SweepMode::Dynamic };
         s.bind = get("bind")
@@ -139,7 +143,7 @@ impl Settings {
             format!("Hit Invisible Players: {}", on(self.hit_invisible_players)),
             format!("Weapon Only: {}", on(self.weapon_only)),
             format!("Holding Bind Only: {}", on(self.holding_bind_only)),
-            format!("Hold Bind: {}", self.bind),
+            format!("Hold Bind: {}  [click to capture]", display_bind(&self.bind)),
             "Reset All Settings".into(),
         ]
     }
@@ -151,14 +155,10 @@ impl Settings {
             0 => self.enabled = !self.enabled,
             1 => self.target_mode = match self.target_mode { TargetMode::Anyone => TargetMode::Players, TargetMode::Players => TargetMode::Mobs, TargetMode::Mobs => TargetMode::Anyone },
             2 => self.range_variability = !self.range_variability,
-            3 => self.range = cycle_window(self.range, &[Window{min:2.5,max:3.0}, Window{min:3.0,max:3.5}, Window{min:3.0,max:3.0}]),
-            4 => self.sword_cooldown = cycle_window(self.sword_cooldown, &[Window{min:0.85,max:0.90},Window{min:0.89,max:0.93},Window{min:0.95,max:1.0}]),
-            5 => self.axe_cooldown = cycle_window(self.axe_cooldown, &[Window{min:0.85,max:0.90},Window{min:0.89,max:0.93},Window{min:0.95,max:1.0}]),
-            6 => self.reaction_ms = if self.reaction_ms >= 250 { 0 } else { self.reaction_ms + 25 },
-            7 => self.miss_chance = (self.miss_chance + 5) % 105,
-            8 => self.miss_range = cycle_window(self.miss_range, &[Window{min:2.5,max:3.0},Window{min:3.0,max:3.5},Window{min:3.5,max:4.0}]),
+            3..=8 => {},
+
             9 => self.smart_crits = !self.smart_crits,
-            10 => self.crit_delay_ms = cycle_window(self.crit_delay_ms, &[Window{min:0.0,max:10.0},Window{min:10.0,max:20.0},Window{min:20.0,max:40.0}]),
+            10 => {},
             11 => self.reduce_sweeps = !self.reduce_sweeps,
             12 => self.sweep_mode = match self.sweep_mode { SweepMode::Dynamic => SweepMode::Always, SweepMode::Always => SweepMode::Never, SweepMode::Never => SweepMode::Dynamic },
             13 => self.ignore_shields = !self.ignore_shields,
@@ -167,13 +167,40 @@ impl Settings {
             16 => self.hit_invisible_players = !self.hit_invisible_players,
             17 => self.weapon_only = !self.weapon_only,
             18 => self.holding_bind_only = !self.holding_bind_only,
-            19 => self.bind = match self.bind.as_str() {
-                "BUTTON5" => "BUTTON4".into(),
-                "BUTTON4" => "KEY_R".into(),
-                "KEY_R" => "KEY_F".into(),
-                _ => "BUTTON5".into(),
-            },
+            19 => {}, // The screen hook starts key capture for this row.
+
             20 => *self = Self::default(),
+            _ => {}
+        }
+    }
+
+    /// Normalized fill coordinates for the custom screen's slider bars.
+    pub fn slider_fill(&self, i: usize) -> Option<(f32, f32)> {
+        let (low, high, a, b) = match i {
+            3 => (0.0, 6.0, self.range.min, self.range.max),
+            4 => (0.0, 1.0, self.sword_cooldown.min, self.sword_cooldown.max),
+            5 => (0.0, 1.0, self.axe_cooldown.min, self.axe_cooldown.max),
+            6 => (0.0, 2000.0, 0.0, self.reaction_ms as f32),
+            7 => (0.0, 100.0, 0.0, self.miss_chance as f32),
+            8 => (0.0, 6.0, self.miss_range.min, self.miss_range.max),
+            10 => (0.0, 1000.0, self.crit_delay_ms.min, self.crit_delay_ms.max),
+            _ => return None,
+        };
+        let span = high - low;
+        Some((((a - low) / span).clamp(0.0, 1.0), ((b - low) / span).clamp(0.0, 1.0)))
+    }
+
+    /// Left-click changes the lower/primary value; right-click changes the upper value.
+    pub fn set_slider(&mut self, i: usize, ratio: f32, upper: bool) {
+        let ratio = if ratio.is_finite() { ratio.clamp(0.0, 1.0) } else { 0.0 };
+        match i {
+            3 => set_window(&mut self.range, 6.0, ratio, upper, 0.05),
+            4 => set_window(&mut self.sword_cooldown, 1.0, ratio, upper, 0.01),
+            5 => set_window(&mut self.axe_cooldown, 1.0, ratio, upper, 0.01),
+            6 => self.reaction_ms = quantize(2000.0 * ratio, 25.0) as u16,
+            7 => self.miss_chance = quantize(100.0 * ratio, 1.0) as u8,
+            8 => set_window(&mut self.miss_range, 6.0, ratio, upper, 0.05),
+            10 => set_window(&mut self.crit_delay_ms, 1000.0, ratio, upper, 5.0),
             _ => {}
         }
     }
@@ -197,9 +224,30 @@ impl Settings {
 
 fn on(v: bool) -> &'static str { if v { "ON" } else { "OFF" } }
 fn b(v: bool) -> String { if v { "1" } else { "0" }.into() }
-fn cycle_window(current: Window, choices: &[Window]) -> Window {
-    let i = choices.iter().position(|v| *v == current).unwrap_or(choices.len() - 1);
-    choices[(i + 1) % choices.len()]
+
+fn quantize(value: f32, step: f32) -> f32 {
+    (value / step).round() * step
+}
+
+fn set_window(window: &mut Window, maximum: f32, ratio: f32, upper: bool, step: f32) {
+    let value = quantize(maximum * ratio, step).clamp(0.0, maximum);
+    if upper {
+        window.max = value.max(window.min);
+    } else {
+        window.min = value.min(window.max);
+    }
+}
+
+fn display_bind(bind: &str) -> String {
+    match bind {
+        "BUTTON2" => "Mouse 2".into(),
+        "BUTTON3" => "Mouse 3".into(),
+        "BUTTON4" => "Mouse 4".into(),
+        "BUTTON5" => "Mouse 5".into(),
+        value if value.starts_with("key.keyboard.") =>
+            value.trim_start_matches("key.keyboard.").replace('.', " ").to_ascii_uppercase(),
+        _ => bind.to_owned(),
+    }
 }
 
 #[cfg(test)]
@@ -248,6 +296,27 @@ mod tests {
         assert_eq!(s.reaction_ms, 0);
         assert_eq!(s.miss_chance, 100);
         assert_eq!(s.bind, "BUTTON5");
+    }
+
+    #[test]
+    fn slider_values_are_bounded_and_keep_windows_ordered() {
+        let mut s = Settings::default();
+        s.set_slider(3, 0.25, false);
+        assert!(s.range.min <= s.range.max);
+        assert!((s.range.min - 1.5).abs() < 0.001);
+        s.set_slider(3, 0.75, true);
+        assert!((s.range.max - 4.5).abs() < 0.001);
+        s.set_slider(7, 0.42, false);
+        assert_eq!(s.miss_chance, 42);
+        s.set_slider(6, 1.0, false);
+        assert_eq!(s.reaction_ms, 2000);
+        assert!(s.slider_fill(4).is_some());
+    }
+
+    #[test]
+    fn extra_window_fields_are_rejected() {
+        let w = Window::parse(Some("1.0,2.0,3.0".into()), Window { min: 4.0, max: 5.0 }, 0.0, 6.0);
+        assert_eq!(w, Window { min: 4.0, max: 5.0 });
     }
 
     #[test]
