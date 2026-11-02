@@ -77,21 +77,22 @@ jobs:
               raise SystemExit("Expected exactly one outdated horizon-ctl build command")
           source = source.replace(old, '        command += ["--profile", "fast"]', 1)
 
-          anchor = '    subprocess.run(command, cwd=stage_dir, env=env, check=True)\\n'
+          anchor = '    subprocess.run(command, cwd=stage_dir, env=env, check=True)'
           if source.count(anchor) != 1:
               raise SystemExit("Could not locate native.py cargo build invocation")
-          addition = '''    if action == "build":
-              ctl_command = [
-                  "cargo", "build", "--locked", "-p", "horizon-client-lib",
-                  "--bin", "horizon-ctl", "--profile", "fast",
-              ]
-              if os.environ.get("NATIVE_NO_DEFAULT_FEATURES"):
-                  ctl_command.append("--no-default-features")
-              if jobs:
-                  ctl_command += ["-j", jobs]
-              subprocess.run(ctl_command, cwd=stage_dir, env=env, check=True)
-          '''
-          source = source.replace(anchor, anchor + addition, 1)
+          addition = "\n".join([
+              "    if action == \"build\":",
+              "        ctl_command = [",
+              "            \"cargo\", \"build\", \"--locked\", \"-p\", \"horizon-client-lib\",",
+              "            \"--bin\", \"horizon-ctl\", \"--profile\", \"fast\",",
+              "        ]",
+              "        if os.environ.get(\"NATIVE_NO_DEFAULT_FEATURES\"):",
+              "            ctl_command.append(\"--no-default-features\")",
+              "        if jobs:",
+              "            ctl_command += [\"-j\", jobs]",
+              "        subprocess.run(ctl_command, cwd=stage_dir, env=env, check=True)",
+          ])
+          source = source.replace(anchor, anchor + "\n" + addition, 1)
           path.write_text(source)
           print("Patched CI copy: build horizon-client and horizon-ctl from their actual packages.")
           PY
