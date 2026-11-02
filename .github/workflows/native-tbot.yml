@@ -81,9 +81,11 @@ jobs:
           python3 - <<'PY'
           import glob
           import json
+          import os
           import zipfile
 
-          path, = glob.glob("$RUNNER_TEMP/horizon-mods/native/target/tbot-*.hnmod")
+          root = os.environ["RUNNER_TEMP"]
+          path, = glob.glob(f"{root}/horizon-mods/native/target/tbot-*.hnmod")
           with zipfile.ZipFile(path) as archive:
               names = archive.namelist()
               manifest = json.loads(archive.read("horizon-native.json"))
