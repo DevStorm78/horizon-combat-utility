@@ -81,7 +81,7 @@ bindings = [
   { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
   { name = "screen", ty = "&crate::game::native_hooks::NativeScreenView<'_>", value = "screen" },
   { name = "button", ty = "i32", value = "button" },
-  { name = "modifiers", ty = "u32", value = "modifiers" },
+  { name = "_modifiers", ty = "u32", value = "modifiers" },
   { name = "canceled", ty = "&mut bool", value = "canceled" },
 ]
 
