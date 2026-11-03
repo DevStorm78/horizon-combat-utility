@@ -120,7 +120,8 @@ impl Settings {
                     (TargetMode::Anyone, true) | (TargetMode::Mobs, false) => TargetMode::Players,
                     (TargetMode::Players, true) => TargetMode::Mobs,
                     (TargetMode::Players, false) => TargetMode::Anyone,
-                    (TargetMode::Mobs, true) | (TargetMode::Anyone, false) => TargetMode::Anyone,
+                    (TargetMode::Mobs, true) => TargetMode::Anyone,
+                    (TargetMode::Anyone, false) => TargetMode::Mobs,
                 };
             }
             1 => {
@@ -501,6 +502,21 @@ mod tests {
         settings.click(4);
         assert_eq!(settings, Settings::default());
         assert_eq!(settings.labels().len(), 6);
+    }
+
+    #[test]
+    fn settings_can_be_changed_in_both_directions() {
+        let mut settings = Settings::default();
+        settings.change(0, false);
+        assert_eq!(settings.target_mode, TargetMode::Mobs);
+        settings.change(0, false);
+        assert_eq!(settings.target_mode, TargetMode::Players);
+        settings.change(0, false);
+        assert_eq!(settings.target_mode, TargetMode::Anyone);
+        settings.change(1, false);
+        assert_eq!(settings.max_range, 2.5);
+        settings.change(2, false);
+        assert_eq!(settings.min_charge, 0.8);
     }
 
     #[test]
