@@ -20,3 +20,7 @@ The settings page contains only controls connected to the trigger logic. Setting
 CI formats and lints the Rust source, runs trigger-logic/settings tests, applies the mixins to the pinned Horizon source, checks the staged game, builds the complete Horizon client and control binary, packages the .hnmod, and validates its manifest and contents.
 
 A successful build verifies compilation and package structure, not live gameplay. The final release still requires a real launch test in Horizon 5e391eb in a private singleplayer world or a server where automation is explicitly permitted.
+
+## Compatibility note
+
+This build intentionally targets API 2, not API 359. It does not include screen-hook injections or any compatibility claim for newer Horizon hook APIs unless the target revision supports the required stable API-2 methods.
