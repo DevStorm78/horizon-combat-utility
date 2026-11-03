@@ -30,7 +30,8 @@ fn official_tbot_tick(game: &mut crate::game::Game<'_>) {
         &settings,
         target_is_player,
         distance,
-        game.attack_strength_scale(),
+        game.hand_strength
+            .scale(0.5, game.main_hand_attack_speed()),
     ) {
         return;
     }
