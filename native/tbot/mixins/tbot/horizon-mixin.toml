@@ -1,11 +1,10 @@
 [mod]
 id = "tbot"
-version = "0.3.0"
+version = "0.4.0"
 priority = 100
 
-# The tested commit; all injections use named, versioned native hook points.
 [compatibility]
-horizon_revision = "8dd76f8d48dc606cfa44f3262086584e09f64e4b"
+horizon_revision = "5e391eb67392941734df7ddd648728c4ed5302f6"
 
 [[module]]
 id = "runtime"
@@ -15,8 +14,7 @@ source = "runtime.rs"
 
 [[injection]]
 id = "list"
-hook = "mods"
-hook_version = 1
+target = "horizon_client::game::native_hooks::Game<'_>::native_mods"
 kind = "HEAD"
 helper = "list.rs"
 bindings = [
@@ -25,8 +23,7 @@ bindings = [
 
 [[injection]]
 id = "settings"
-hook = "settings"
-hook_version = 1
+target = "horizon_client::game::native_hooks::Game<'_>::native_settings"
 kind = "HEAD"
 helper = "settings.rs"
 bindings = [
@@ -37,8 +34,7 @@ bindings = [
 
 [[injection]]
 id = "click"
-hook = "settings_click"
-hook_version = 1
+target = "horizon_client::game::native_hooks::Game<'_>::native_settings_click"
 kind = "HEAD"
 helper = "click.rs"
 bindings = [
@@ -48,9 +44,8 @@ bindings = [
 ]
 
 [[injection]]
-id = "right_shift"
-hook = "key"
-hook_version = 1
+id = "key"
+target = "horizon_client::game::native_hooks::Game<'_>::native_key"
 kind = "HEAD"
 helper = "key.rs"
 bindings = [
@@ -60,50 +55,8 @@ bindings = [
 ]
 
 [[injection]]
-id = "menu_render"
-hook = "screen_render_post"
-hook_version = 1
-kind = "HEAD"
-helper = "screen_render.rs"
-bindings = [
-  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
-  { name = "batch", ty = "&mut horizon_client::hud::HudBatch", value = "&mut *batch" },
-  { name = "screen", ty = "&crate::game::native_hooks::NativeScreenView<'_>", value = "screen" },
-]
-
-[[injection]]
-id = "menu_click"
-hook = "screen_mouse_button_pressed_pre"
-hook_version = 1
-kind = "HEAD"
-helper = "screen_click.rs"
-bindings = [
-  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
-  { name = "screen", ty = "&crate::game::native_hooks::NativeScreenView<'_>", value = "screen" },
-  { name = "button", ty = "i32", value = "button" },
-  { name = "_modifiers", ty = "u32", value = "modifiers" },
-  { name = "canceled", ty = "&mut bool", value = "canceled" },
-]
-
-[[injection]]
-id = "menu_key"
-hook = "screen_key_pressed_pre"
-hook_version = 1
-kind = "HEAD"
-helper = "screen_key.rs"
-bindings = [
-  { name = "game", ty = "&crate::game::Game<'_>", value = "self" },
-  { name = "_screen", ty = "&crate::game::native_hooks::NativeScreenView<'_>", value = "screen" },
-  { name = "key", ty = "&str", value = "key" },
-  { name = "repeat", ty = "bool", value = "repeat" },
-  { name = "_modifiers", ty = "u32", value = "modifiers" },
-  { name = "canceled", ty = "&mut bool", value = "&mut *canceled" },
-]
-
-[[injection]]
-id = "triggerbot_tick"
-hook = "tick"
-hook_version = 1
+id = "tick"
+target = "horizon_client::game::native_hooks::Game<'_>::native_tick"
 kind = "HEAD"
 helper = "tick.rs"
 bindings = [

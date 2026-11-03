@@ -44,11 +44,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libasound2-dev libudev-dev pkg-config
 
+      - name: Check formatting
+        working-directory: native/tbot
+        run: cargo fmt --check
+
       - name: Run Clippy with warnings denied
         working-directory: native/tbot
         run: cargo clippy --all-targets --locked -- -D warnings
 
-      - name: Run settings and parser tests
+      - name: Run trigger logic and settings tests
         working-directory: native/tbot
         run: cargo test --locked
 
@@ -59,10 +63,15 @@ jobs:
           mkdir -p "$RUNNER_TEMP/horizon-mods/native"
           cp -R native/tbot "$RUNNER_TEMP/horizon-mods/native/tbot"
 
-      - name: Check T-Bot applied to Horizon
+      - name: Check T-Bot applied to the target Horizon build
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 "$RUNNER_TEMP/horizon-mods/native/tools/native.py" check tbot
+
+      - name: Build the complete Horizon client with T-Bot
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 "$RUNNER_TEMP/horizon-mods/native/tools/native.py" build tbot
 
       - name: Package the installable .hnmod
         run: python3 "$RUNNER_TEMP/horizon-mods/native/tools/native.py" package tbot
@@ -75,23 +84,32 @@ jobs:
           import os
           import zipfile
 
-          root = os.environ["RUNNER_TEMP"]
-          path, = glob.glob(f"{root}/horizon-mods/native/target/tbot-*.hnmod")
+          path, = glob.glob(f"{os.environ['RUNNER_TEMP']}/horizon-mods/native/target/tbot-*.hnmod")
           with zipfile.ZipFile(path) as archive:
               names = archive.namelist()
               manifest = json.loads(archive.read("horizon-native.json"))
           assert manifest["id"] == "tbot", manifest
+          assert manifest["version"] == "0.4.0", manifest
           assert manifest["game"] == "26.3", manifest
-          assert manifest["hooks"] == 359, manifest
-          assert "mixins/tbot/horizon-mixin.toml" in names, names
-          assert "mixins/tbot/runtime.rs" in names, names
+          assert manifest["hooks"] == 2, manifest
+          assert manifest["horizon"] == "5e391eb67392941734df7ddd648728c4ed5302f6", manifest
+          required = {
+              "mixins/tbot/horizon-mixin.toml",
+              "mixins/tbot/runtime.rs",
+              "mixins/tbot/tick.rs",
+              "mixins/tbot/key.rs",
+              "mixins/tbot/list.rs",
+              "mixins/tbot/settings.rs",
+              "mixins/tbot/click.rs",
+          }
+          assert required.issubset(set(names)), (required, names)
           print(json.dumps({"artifact": path, "manifest": manifest, "files": names}, indent=2))
           PY
 
       - name: Upload installable bundle
         uses: actions/upload-artifact@v4
         with:
-          name: tbot-0.3.0-hnmod
-          path: ${{ runner.temp }}/horizon-mods/native/target/tbot-0.3.0.hnmod
+          name: tbot-0.4.0-hnmod
+          path: ${{ runner.temp }}/horizon-mods/native/target/tbot-0.4.0.hnmod
           if-no-files-found: error
           retention-days: 30
