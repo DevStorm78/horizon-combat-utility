@@ -1,10 +1,10 @@
 [package]
 name = "horizon-mod-tbot"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 license = "MIT"
 publish = false
-description = "Configurable T-Bot native mod for Horizon"
+description = "Configurable T-Bot native triggerbot for Horizon"
 
 [lib]
 path = "mixins/tbot/runtime.rs"
