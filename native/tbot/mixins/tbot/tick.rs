@@ -21,6 +21,16 @@ fn official_tbot_tick(game: &mut crate::game::Game<'_>) {
     let Some(target) = game.mobs.get(target_index) else {
         return;
     };
+    // Require the exact living entity to be Horizon's actual crosshair pick.
+    // This also checks block occlusion and prevents a nearer boat, frame or
+    // projectile from receiving an attack intended for the mob behind it.
+    let Some(Some(picked_id)) = game.pick_entity_hit() else {
+        return;
+    };
+    if picked_id != target.id as i32 {
+        return;
+    }
+
     let target_is_player = &*target.kind.id == "minecraft:player";
 
     if !m::should_attack(
