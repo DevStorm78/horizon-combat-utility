@@ -7,6 +7,6 @@ fn official_tbot_settings(
     if mod_id != m::ID {
         return;
     }
-    let game = &*game;
-    buttons.extend(m::Settings::read(|key| game.native_setting(m::ID, key)).labels());
+    let settings = m::settings(|key| game.native_setting(m::ID, key));
+    buttons.extend(settings.labels());
 }
