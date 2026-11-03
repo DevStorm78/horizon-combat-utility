@@ -3,8 +3,9 @@ fn official_tbot_click(game: &mut crate::game::Game<'_>, mod_id: &str, button: u
     if mod_id != m::ID {
         return;
     }
-    let mut settings = m::Settings::read(|key| game.native_setting(m::ID, key));
+    let mut settings = m::settings(|key| game.native_setting(m::ID, key));
     settings.click(button);
+    m::set_settings(settings.clone());
     for (key, value) in settings.stored() {
         game.native_set_setting(m::ID, key, &value);
     }
