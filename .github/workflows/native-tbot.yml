@@ -8,7 +8,7 @@ on:
       - "README.md"
       - ".github/workflows/native-tbot.yml"
   pull_request:
-    branches: [native-hnmod]
+    branches: [main, native-hnmod]
     paths:
       - "native/tbot/**"
       - "README.md"
