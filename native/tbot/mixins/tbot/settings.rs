@@ -8,5 +8,6 @@ fn official_tbot_settings(
         return;
     }
     let settings = m::settings(|key| game.native_setting(m::ID, key));
-    buttons.extend(settings.labels());
+    buttons.extend(settings.labels().into_iter().skip(1));
+    buttons.push("In-game menu: press Right Shift".into());
 }

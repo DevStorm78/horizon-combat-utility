@@ -4,6 +4,7 @@ fn official_tbot_listed(mods: &mut Vec<crate::game::native_hooks::NativeMod>) {
         id: m::ID.into(),
         title: format!("{} {}", m::NAME, m::VERSION),
         description: m::DESCRIPTION.into(),
-        keys: vec![[m::KEY.into(), "Hold to Activate".into(), m::DEFAULT_KEY.into()]],
+        // The activation key is captured and saved by the in-game menu.
+        keys: vec![],
     });
 }
