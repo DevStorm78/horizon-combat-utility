@@ -2,7 +2,7 @@ name: T-Bot native CI
 
 on:
   push:
-    branches: [native-hnmod]
+    branches: [main, native-hnmod]
     paths:
       - "native/tbot/**"
       - "README.md"
@@ -52,7 +52,7 @@ jobs:
         working-directory: native/tbot
         run: cargo clippy --all-targets --locked -- -D warnings
 
-      - name: Run trigger logic and settings tests
+      - name: Run trigger logic, settings and menu tests
         working-directory: native/tbot
         run: cargo test --locked
 
@@ -101,6 +101,7 @@ jobs:
               "mixins/tbot/list.rs",
               "mixins/tbot/settings.rs",
               "mixins/tbot/click.rs",
+              "mixins/tbot/hud.rs",
           }
           assert required.issubset(set(names)), (required, names)
           print(json.dumps({"artifact": path, "manifest": manifest, "files": names}, indent=2))
