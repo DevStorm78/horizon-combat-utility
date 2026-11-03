@@ -2,7 +2,7 @@ name: T-Bot native CI
 
 on:
   push:
-    branches: [main, native-hnmod]
+    branches: ["**"]
     paths:
       - "native/tbot/**"
       - "README.md"
