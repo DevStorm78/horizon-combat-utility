@@ -195,13 +195,6 @@ pub fn should_attack(
 mod tests {
     use super::*;
 
-    fn get_from(values: &[(&str, &str)], key: &str) -> Option<String> {
-        values
-            .iter()
-            .find(|(name, _)| *name == key)
-            .map(|(_, value)| (*value).to_owned())
-    }
-
     #[test]
     fn defaults_are_safe_and_hold_to_activate() {
         let settings = Settings::default();
@@ -209,24 +202,38 @@ mod tests {
         assert_eq!(settings.max_range, 3.0);
         assert_eq!(settings.min_charge, 0.90);
         assert!(settings.hold_to_activate);
-        assert!(!should_attack(true, true, false, &settings, false, 2.0, 1.0));
+        assert!(!should_attack(
+            true, true, false, &settings, false, 2.0, 1.0
+        ));
         assert!(should_attack(true, true, true, &settings, false, 2.0, 1.0));
     }
 
     #[test]
     fn module_and_world_gates_are_required() {
-        let settings = Settings { hold_to_activate: false, ..Settings::default() };
-        assert!(!should_attack(false, true, false, &settings, false, 2.0, 1.0));
-        assert!(!should_attack(true, false, false, &settings, false, 2.0, 1.0));
+        let settings = Settings {
+            hold_to_activate: false,
+            ..Settings::default()
+        };
+        assert!(!should_attack(
+            false, true, false, &settings, false, 2.0, 1.0
+        ));
+        assert!(!should_attack(
+            true, false, false, &settings, false, 2.0, 1.0
+        ));
         assert!(should_attack(true, true, false, &settings, false, 2.0, 1.0));
     }
 
     #[test]
     fn target_mode_filters_players_and_mobs() {
-        let mut settings = Settings { hold_to_activate: false, ..Settings::default() };
+        let mut settings = Settings {
+            hold_to_activate: false,
+            ..Settings::default()
+        };
         settings.target_mode = TargetMode::Players;
         assert!(should_attack(true, true, false, &settings, true, 2.0, 1.0));
-        assert!(!should_attack(true, true, false, &settings, false, 2.0, 1.0));
+        assert!(!should_attack(
+            true, true, false, &settings, false, 2.0, 1.0
+        ));
         settings.target_mode = TargetMode::Mobs;
         assert!(should_attack(true, true, false, &settings, false, 2.0, 1.0));
         assert!(!should_attack(true, true, false, &settings, true, 2.0, 1.0));
@@ -234,19 +241,46 @@ mod tests {
 
     #[test]
     fn range_and_attack_charge_are_enforced() {
-        let settings = Settings { hold_to_activate: false, ..Settings::default() };
-        assert!(should_attack(true, true, false, &settings, false, 3.0, 0.90));
-        assert!(!should_attack(true, true, false, &settings, false, 3.01, 1.0));
-        assert!(!should_attack(true, true, false, &settings, false, 2.0, 0.89));
-        assert!(!should_attack(true, true, false, &settings, false, f64::NAN, 1.0));
-        assert!(!should_attack(true, true, false, &settings, false, 2.0, f32::NAN));
+        let settings = Settings {
+            hold_to_activate: false,
+            ..Settings::default()
+        };
+        assert!(should_attack(
+            true, true, false, &settings, false, 3.0, 0.90
+        ));
+        assert!(!should_attack(
+            true, true, false, &settings, false, 3.01, 1.0
+        ));
+        assert!(!should_attack(
+            true, true, false, &settings, false, 2.0, 0.89
+        ));
+        assert!(!should_attack(
+            true,
+            true,
+            false,
+            &settings,
+            false,
+            f64::NAN,
+            1.0
+        ));
+        assert!(!should_attack(
+            true,
+            true,
+            false,
+            &settings,
+            false,
+            2.0,
+            f32::NAN
+        ));
     }
 
     #[test]
     fn hold_release_prevents_triggering() {
         let settings = Settings::default();
         assert!(should_attack(true, true, true, &settings, false, 2.0, 1.0));
-        assert!(!should_attack(true, true, false, &settings, false, 2.0, 1.0));
+        assert!(!should_attack(
+            true, true, false, &settings, false, 2.0, 1.0
+        ));
     }
 
     #[test]
@@ -291,7 +325,10 @@ mod tests {
 
     #[test]
     fn cached_settings_change_without_another_disk_read() {
-        set_settings(Settings { max_range: 2.5, ..Settings::default() });
+        set_settings(Settings {
+            max_range: 2.5,
+            ..Settings::default()
+        });
         let result = settings(|_| panic!("cached settings should not read storage"));
         assert_eq!(result.max_range, 2.5);
         set_settings(Settings::default());
