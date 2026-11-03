@@ -9,7 +9,16 @@ fn official_tbot_tick(game: &mut crate::game::Game<'_>) {
 
     let in_world = game.native_playing() && game.player.is_some();
     let module_on = game.native_on(m::ID);
-    if !module_on || !in_world {
+    if !in_world {
+        m::close_menu();
+        m::set_bind_down(false);
+        return;
+    }
+    if !module_on {
+        m::set_bind_down(false);
+        return;
+    }
+    if m::menu_open() {
         m::set_bind_down(false);
         return;
     }
@@ -37,6 +46,7 @@ fn official_tbot_tick(game: &mut crate::game::Game<'_>) {
         module_on,
         in_world,
         m::bind_down(),
+        m::menu_open(),
         &settings,
         target_is_player,
         distance,
