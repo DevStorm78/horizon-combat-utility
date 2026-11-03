@@ -43,7 +43,7 @@ fn official_tbot_tick(game: &mut crate::game::Game<'_>) {
         // Bypass ToggleAttack only for this synthetic edge, then restore the
         // user's actual held/toggled attack state.
         let previous_left = game.left;
-        let previous_toggle_state = game.toggles.is_down(2);
+        let previous_toggle_state = game.toggles.0[2].clone();
         let previous_toggle_option = game.settings.toggle_attack;
 
         game.settings.toggle_attack = false;
@@ -51,7 +51,7 @@ fn official_tbot_tick(game: &mut crate::game::Game<'_>) {
         let _ = game.remote_mouse(winit::event::MouseButton::Left, false);
 
         game.settings.toggle_attack = previous_toggle_option;
-        game.toggles.0[2].is_down = previous_toggle_state;
+        game.toggles.0[2] = previous_toggle_state;
         game.left = previous_left;
     } else {
         // Local/offline Game: use Horizon's normal in-process attack implementation.
