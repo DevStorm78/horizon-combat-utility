@@ -1,38 +1,40 @@
-# T-Bot — Horizon native mod
+# T-Bot — Horizon native triggerbot
 
-T-Bot is a native Rust mixin bundle for Horizon 26.3. It is built as an
-`.hnmod` against the pinned Horizon and horizon-mixins revisions in
-`compatibility.json`.
+T-Bot is a native Rust `.hnmod` for Horizon 26.3. Version 0.4.0 targets
+Horizon native hook API 2 at commit
+`5e391eb67392941734df7ddd648728c4ed5302f6`. It replaces the older
+settings-only build with a triggerbot wired into Horizon's real game-input
+path.
 
-## Included
+## Features
 
-- Right Shift opens and closes the T-Bot settings screen.
-- Escape closes the screen; while a bind is being captured, Escape cancels capture.
-- Settings are persisted through Horizon's native mod settings store.
-- Boolean and enum preferences can be changed from the panel.
-- Numeric preferences have adjustable sliders. Left-click the slider to set
-  its lower/primary value; right-click to set its upper value. Scalar values
-  use either click button.
-- The hold-bind row captures keyboard keys and mouse buttons 2–5.
-- Reset All Settings restores the defaults; Escape cancels an active bind capture.
-- Persisted numbers are clamped and malformed values fall back to safe defaults.
+- **Crosshair triggerbot:** attacks the living entity currently under the crosshair.
+- **Hold-to-activate:** Right Alt by default; release it to stop queuing attacks.
+- **Target filter:** Anyone, Players, or Mobs.
+- **Reach limit:** 1.5, 2.0, 2.5, or 3.0 blocks.
+- **Minimum attack charge:** 50% to 100%.
+- **Module toggle:** enable/disable through Horizon's Mods page.
+- **Persistent settings:** configuration is saved by Horizon's native mod store.
 
-## Important scope
+The trigger uses the client tick, keybind event and Horizon's own attack/input
+mechanics. On a connected world it queues a normal attack click, allowing
+Horizon to send the server's ordinary attack and swing packets; it does not
+pretend to apply local damage to a remote entity.
 
-The current public native hooks let this bundle provide a native settings
-screen and store preferences, but this project does **not** currently perform
-automatic player/entity selection or issue attacks, change inventory slots,
-inject movement input, or evade server protections. The combat-related values
-are configuration preferences; they are not claimed to drive an automated
-combat routine. I will not describe the client as a completed auto-combat bot
-when those game-action paths are not implemented.
+## Compatibility
 
-No anti-cheat evasion, concealment, memory patching, or process injection is
-included.
+- Minecraft: 26.3
+- Horizon native hook API: 2
+- Horizon revision: `5e391eb67392941734df7ddd648728c4ed5302f6`
+- Mod ID: `tbot`
+- Bundle: `tbot-0.4.0.hnmod`
+
+This build is not compatible with the older API-359 Horizon build. Use the
+Horizon version whose commit identifies as `5e391eb` / API 2.
 
 ## Build on Linux / CachyOS
 
-Install Rust and the native dependencies:
+Install the toolchain and native libraries:
 
 ```bash
 rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
@@ -40,8 +42,7 @@ rustup default 1.99.1
 sudo pacman -S --needed base-devel pkgconf alsa-lib systemd-libs
 ```
 
-The official build script lives in the Horizon native-mods repository. Copy
-this bundle into that workspace and run its checks:
+Copy the source into the official Horizon native-mods workspace and build it:
 
 ```bash
 git clone https://github.com/horizon-rust/horizon-mods.git
@@ -52,40 +53,30 @@ python3 native/tools/native.py build tbot
 python3 native/tools/native.py package tbot
 ```
 
-The package is written to `native/target/tbot-0.2.0.hnmod`. The official
-tool downloads the pinned Horizon source and builds the client with the
-native bundle applied. The `check` and `build` commands therefore verify
-more than compiling the standalone settings crate.
+The package is written to `native/target/tbot-0.4.0.hnmod`. The GitHub
+Actions workflow runs formatting, Clippy, unit tests, the pinned Horizon
+integration check, a full Horizon client build, and package-content
+validation before uploading the installable bundle.
 
-## Install and run
+## Install
 
-A native bundle is **not** a Java `mods/` JAR. The `.hnmod` file is a
-source bundle that Horizon's launcher validates and compiles into a separate,
-isolated game instance. Do not copy the `.hnmod` file into the normal
-`mods/` folder.
-
-After a successful CI build, download `tbot-0.2.0.hnmod` from the workflow's
-Artifacts section. On Linux, unpack it and ask Horizon Launcher to build it:
+A native bundle is **not** a Java `mods/` JAR. Do not put the `.hnmod`
+file in the usual `mods/` directory. Use Horizon Launcher's native-build
+command to create a separate instance:
 
 ```bash
 mkdir -p "$HOME/Downloads/tbot-native"
-unzip -o tbot-0.2.0.hnmod -d "$HOME/Downloads/tbot-native"
+unzip -o tbot-0.4.0.hnmod -d "$HOME/Downloads/tbot-native"
 horizon-launcher native-build "$HOME/Downloads/tbot-native" --instance "T-Bot" --trust-native-code
 ```
 
-This requires Horizon Launcher 0.2.23 or later and a prepared Horizon 26.3
-installation. The first native build downloads the launcher's pinned Rust
-toolchain and may take a while. Read the source before trusting it: native
-mods run with your account's permissions. Launch the newly created **T-Bot**
-native-mods instance, not your ordinary instance.
+Launch the newly created T-Bot instance. Read the source before trusting any
+native bundle: it runs with your account's permissions.
 
-To inspect the CLI options before building, run
-`horizon-launcher native-build --help`.
+## Testing scope
 
-## Validation
-
-The GitHub Actions workflow runs Clippy with warnings denied,
-unit tests, Horizon integration check, full client build, and package
-validation. A successful workflow artifact is the installable `.hnmod`.
-A local Rust toolchain or a CI run is required to confirm the build; this
-README does not claim an in-launcher runtime test.
+Unit tests cover the activation gates, target filters, range, charge and
+settings. A successful CI run proves that the bundle applies to the pinned
+Horizon source, compiles in a full client build and packages correctly. It
+does **not** by itself prove live combat behaviour in a running game; that
+requires a runtime test in Horizon 5e391eb.
